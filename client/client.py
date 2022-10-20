@@ -1,11 +1,12 @@
-from pyexpat import model
 from collections import OrderedDict
+from multiprocessing import Process
 from flask import Flask, request
 
 from src.SingleLSTM import SingleLSTMEncoder
-from utils import from_bytes, get_config, to_bytes, train, send_model
+from utils import from_bytes, get_config, train, send_model
 
 app = Flask(__name__)
+
 
 @app.route("/models", methods = ['GET', 'POST'])
 def update():
@@ -14,12 +15,9 @@ def update():
     if request.method == 'POST':
         data = request.get_data()
         print("Received a global model.")
-        model = process_request(data=data)
-        if model is None:
-            print("Empty model.")
-            return "Empty model."
-        response = send_model(model=model)
-        return response
+        p = Process(target=process_request, args=(data,))
+        p.start()
+        return "Received a global model."
 
 
 def process_request(data):
@@ -35,6 +33,7 @@ def process_request(data):
     global_model.load_state_dict(w_global)
     print("Training with the new global model")
     w_local = train(global_model)
+    send_model(model=w_local)
     return w_local
 
 

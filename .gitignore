@@ -4,3 +4,4 @@ client/log_dir/*
 data/*
 client/src/__pycache__/*
 server/src/__pycache__/*
+*.log

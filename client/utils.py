@@ -1,4 +1,3 @@
-import base64
 import copy
 import json
 import torch
@@ -64,11 +63,10 @@ def train(global_model):
         w_local = w
         loss_locals.append(copy.deepcopy(loss))
         local_valid_acc.append(valid_acc)
-
         loss_avg = sum(loss_locals) / len(loss_locals)
-        print('Round {:3d}, Average loss {:.3f}'.format(i, loss_avg))
         loss_train.append(loss_avg)
-        print(sum(local_valid_acc) / len(local_valid_acc))
+        accuracy_avg = sum(local_valid_acc) / len(local_valid_acc)
+        print('Local Round = {:3d}/{} | Average loss = {:.3f} | Average accuracy = {:.3f}'.format(i, get_config(key="epochs"), loss_avg, accuracy_avg))
         torch.save(global_model, get_config(key="fed_model_save"))
     
     return w_local

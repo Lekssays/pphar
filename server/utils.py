@@ -2,11 +2,9 @@ import torch
 import io
 import requests
 import json
-import threading
 
 from collections import OrderedDict
-
-from src.main_fed import FedAvg
+from multiprocessing import Process
 from src.SingleLSTM import SingleLSTMEncoder
 from helper import get_device_id
 
@@ -16,6 +14,7 @@ if(train_on_gpu):
     device_id = get_device_id(torch.cuda.is_available())
 device = torch.device(f"cuda:{device_id}" if device_id >= 0 else "cpu")
 
+rounds = 0
 
 def get_config(key: str):
     with open("config.json", "r") as f:
@@ -54,12 +53,14 @@ def send_message(address: str, port: int, data: bytes):
     return res.content
 
 
-def send_global_model(model: OrderedDict, rounds: int):
+def send_global_model(model: OrderedDict):
+    global rounds
     subjects = get_config(key="subjects")
     for s in subjects:
         address = "subject" + str(s) + ".pphar.io"
         port = 5000
         data = to_bytes(content=model)
         print("Sending the global model to " + address + " / " + str(rounds))
-        t = threading.Thread(target=send_message, args=(address, port, data,))
-        t.start()
+        p = Process(target=send_message, args=(address, port, data,))
+        p.start()
+    rounds += 1
