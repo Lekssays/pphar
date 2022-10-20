@@ -1,0 +1,16 @@
+  core_id:
+    container_name: core_id
+    privileged: true
+    image: lekssays/occlum-pphar:latest
+    environment:
+    - PPHAR_CORE_ID=core_id
+    - PPHAR_SERVER_PORT=8585
+    command: /bin/bash /entry/hello.sh
+    working_dir: /server
+    volumes:
+    - ./entry:/entry
+    - ./server/:/server
+    - /dev/sgx_enclave:/dev/sgx/enclave 
+    - /dev/sgx_provision:/dev/sgx/provision
+    networks:
+    - pphar

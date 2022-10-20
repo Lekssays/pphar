@@ -1,0 +1,60 @@
+version: '2'
+
+networks:
+  pphar:
+
+services:
+  subject1.pphar.io:
+    container_name: subject1.pphar.io
+    image: lekssays/pphar-client:latest
+    environment:
+    - PPHAR_CORE_ID=subject1.pphar.io
+    - PPHAR_SUBJECT_ID=1
+    - PPHAR_PROJECT_DIRECTORY=/data/
+    - PPHAR_SERVER_URL=server.pphar.io:5000
+    command: /bin/bash /entry/hello.sh
+    working_dir: /client
+    volumes:
+    - ./entry:/entry
+    - ./client:/client
+    - ./data/1:/data/1
+    ports:
+      - 5001:5000
+    networks:
+    - pphar
+
+  subject2.pphar.io:
+    container_name: subject2.pphar.io
+    image: lekssays/pphar-client:latest
+    environment:
+    - PPHAR_CORE_ID=subject2.pphar.io
+    - PPHAR_SUBJECT_ID=2
+    - PPHAR_PROJECT_DIRECTORY=/data/
+    - PPHAR_SERVER_URL=server.pphar.io:5000
+    command: /bin/bash /entry/hello.sh
+    working_dir: /client
+    volumes:
+    - ./entry:/entry
+    - ./client:/client
+    - ./data/2:/data/2
+    ports:
+      - 5002:5000
+    networks:
+    - pphar
+
+  server.pphar.io:
+    container_name: server.pphar.io
+    image: lekssays/pphar-client:latest
+    environment:
+    - PPHAR_CORE_ID=server.pphar.io
+    - PPHAR_SERVER_PORT=8585
+    command: /bin/bash /entry/hello.sh
+    working_dir: /server
+    volumes:
+    - ./entry:/entry
+    - ./server/:/server
+    ports:
+      - 8585:5000
+    networks:
+    - pphar
+
