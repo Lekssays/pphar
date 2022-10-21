@@ -30,20 +30,35 @@ def init():
 
 
 def process_request(data):
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
     model = from_bytes(data)
+    
+    rounds = get_rounds()
+    if rounds > get_config(key="epochs"):
+        message = "Training finished :)"
+        print(message)
+        loop.run_until_complete(send_log(message))   
+        return "Training finished."
+
     if len(w_locals) < get_config(key="n_subjects") - 1:
-        print(len(w_locals), type(get_config(key="n_subjects")), get_config(key="n_subjects"))
         w_locals.append(model)
-        print("Received a local model.")
+        message = "Received a local model."
+        print(message)
+        loop.run_until_complete(send_log(message))   
         return "Received a local model."
     else:
-        print("Aggregating local models.")
+        message = "Aggregating local models."
+        print(message)
+        loop.run_until_complete(send_log(message))   
         if not get_config(key="encrypted"):
             w_global = FedAvg(w_locals)
         w_locals.clear()
         send_global_model(model=w_global)
-        print("Sent aggregated global model.")
-        return "Sent aggregated global model."
+        message = "Sent aggregated global model."
+        print(message)
+        loop.run_until_complete(send_log(message))
+        return"Sent aggregated global model."
 
 
 if __name__ == "__main__":

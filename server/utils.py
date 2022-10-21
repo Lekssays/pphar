@@ -1,9 +1,15 @@
-import torch
+import asyncio
 import io
-import requests
 import json
+import torch
+import requests
+import os
+import websockets
+
 
 from collections import OrderedDict
+from datetime import datetime
+
 from multiprocessing import Process
 from src.SingleLSTM import SingleLSTMEncoder
 from helper import get_device_id
@@ -54,13 +60,31 @@ def send_message(address: str, port: int, data: bytes):
 
 
 def send_global_model(model: OrderedDict):
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
     global rounds
     subjects = get_config(key="subjects")
     for s in subjects:
         address = "subject" + str(s) + ".pphar.io"
         port = 5000
         data = to_bytes(content=model)
-        print("Sending the global model to " + address + " / " + str(rounds))
+        message = "Sending the global model to " + address + " / " + str(rounds)
+        print(message)
+        loop.run_until_complete(send_log(message))   
         p = Process(target=send_message, args=(address, port, data,))
         p.start()
     rounds += 1
+    return rounds
+
+
+async def send_log(message: str):
+    uri = "ws://172.17.0.1:7777"
+    dt = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+    message = dt + " - [" + os.getenv("PPHAR_CORE_ID") + "] " + message
+    async with websockets.connect(uri) as websocket:
+        await websocket.send(message)
+
+
+def get_rounds():
+    global rounds
+    return rounds
