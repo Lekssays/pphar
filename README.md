@@ -17,7 +17,7 @@ pip3 install -r requirements.txt
 
 ### Run pphar:
 
-- Keep peers data in `./data/` in the format `./data/:id` where `id` is the identifier of the peers (e.g., 1, 2, 3, etc.).
+- Keep peers data in `./data/` in the format `./data/:id` where `id` is the identifier of the peer (e.g., 1, 2, 3, etc.).
 
 - Modify the config files in `./server/config.json` and `./client/config.json`.
 
@@ -27,9 +27,14 @@ pip3 install -r requirements.txt
 python3 ./logs/server.py 
 ```
 
-- Start the simulator:
+- Start the simulator where `SERVERS`, `PEERS`, and `GPU` denote the number of servers, the number of peers, and the existence of a GPU (-1 for CPU and 1 for GPU).
 ```
-./simulate.sh SERVERS PEERS
+./simulate.sh SERVERS PEERS GPU
+```
+
+Example of an experiment with one server two peers without GPU.
+```
+./simulate.sh 1 2 -1
 ```
 
 - Clean the environment:

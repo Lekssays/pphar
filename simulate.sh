@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo "Generating docker-compose.yaml..."
-python3 generator.py -s $1 -p $2
+python3 generator.py -s $1 -p $2 -g $3
 
 sleep 5
 
