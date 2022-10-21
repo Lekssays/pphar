@@ -69,7 +69,7 @@ def generate_peers_configs_gpu(participants: int, servers: int) -> list:
         configs.append(content)
 
     _servers = []
-    base_filename = "./templates/server.yaml"
+    base_filename = "./templates/server_gpu.yaml"
     for server in range(1, servers + 1):
         config_file = open(base_filename, "r")
         content = config_file.read()
