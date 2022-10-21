@@ -51,8 +51,8 @@ def send_message(address: str, port: int, data: bytes):
 def send_model(model: OrderedDict):
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    address = "server.pphar.io"
-    port = 5000
+    address = os.getenv("PPHAR_SERVER_HOST")
+    port = int(os.getenv("PPHAR_SERVER_PORT"))
     send_message(address=address, port=port,data=to_bytes(content=model))
     message = "Sending the local model to " + address
     print(message)

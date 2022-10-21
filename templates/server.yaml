@@ -1,6 +1,6 @@
   core_id:
     container_name: core_id
-    image: lekssays/occlum-pphar:latest
+    image: lekssays/pphar-client:latest
     environment:
     - PPHAR_CORE_ID=core_id
     - PPHAR_SERVER_PORT=5000
@@ -9,5 +9,7 @@
     volumes:
     - ./entry:/entry
     - ./server/:/server
+    ports:
+    - 8585:5000
     networks:
     - pphar

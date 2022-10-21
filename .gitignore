@@ -5,3 +5,7 @@ data/*
 client/src/__pycache__/*
 server/src/__pycache__/*
 *.log
+peers.txt
+.gitignore
+docker-compose.yaml
+servers.txt
