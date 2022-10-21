@@ -23,6 +23,7 @@ def update():
 def process_request(data):
     w_global = from_bytes(data)
     if type(w_global) != OrderedDict:
+        print("The received global model is not an OrderedDict.")
         return None
     n_channels = get_config(key="n_channels")
     n_hidden_layers = get_config(key="n_hidden_layers")

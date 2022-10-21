@@ -41,7 +41,7 @@ def process_request(data):
         if not get_config(key="encrypted"):
             w_global = FedAvg(w_locals)
         w_locals.clear()
-        send_global_model(to_bytes(w_global))
+        send_global_model(model=w_global)
         print("Sent aggregated global model.")
         return "Sent aggregated global model."
 
