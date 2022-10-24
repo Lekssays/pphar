@@ -1,14 +1,10 @@
-import threading
 
 from flask import Flask, request
 
+from src.main_fed import FedAvg
 from utils import *
 
-from src.main_fed import FedAvg
-
-
 w_locals = []
-sem = threading.Semaphore()
 
 app = Flask(__name__)
 
@@ -38,7 +34,7 @@ def process_request(data):
     if rounds > get_config(key="epochs"):
         message = "Training finished :)"
         print(message)
-        loop.run_until_complete(send_log(message))   
+        loop.run_until_complete(send_log(message))
         return "Training finished."
 
     if len(w_locals) < get_config(key="n_subjects") - 1:
@@ -58,7 +54,13 @@ def process_request(data):
         message = "Sent aggregated global model."
         print(message)
         loop.run_until_complete(send_log(message))
-        return"Sent aggregated global model."
+
+        message = "Saving the aggregated global model locally."
+        print(message)
+        loop.run_until_complete(send_log(message))
+        torch.save(w_global, "w_global.pt")
+
+        return"Sent and saved aggregated global model."
 
 
 if __name__ == "__main__":
