@@ -1,7 +1,6 @@
 import asyncio
 
 from collections import OrderedDict
-from multiprocessing import Process
 from flask import Flask, request
 
 from src.SingleLSTM import SingleLSTMEncoder
@@ -21,8 +20,7 @@ def update():
         message = "Received a global model."
         print(message)
         loop.run_until_complete(send_log(message))
-        p = Process(target=process_request, args=(data,))
-        p.start()
+        _ = process_request(data=data)
         return "Received a global model."
 
 
