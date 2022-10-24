@@ -1,12 +1,7 @@
   core_id:
     container_name: core_id
-    image: lekssays/pphar-client:latest
-    deploy:
-      resources:
-        reservations:
-          devices:
-          - driver: nvidia
-            capabilities: [gpu]
+    image: lekssays/pphar-client:gpu
+    priviliged: true
     environment:
     - PPHAR_CORE_ID=core_id
     - PPHAR_SUBJECT_ID=subject_id
