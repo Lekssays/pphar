@@ -10,6 +10,7 @@
     volumes:
     - ./entry:/entry
     - ./server/:/server
+    - ./config.json:/server/config.json
     ports:
     - 8585:5000
     networks:

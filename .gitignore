@@ -9,3 +9,5 @@ peers.txt
 .gitignore
 docker-compose.yaml
 servers.txt
+client/config.json
+server/config.json

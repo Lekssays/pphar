@@ -2,6 +2,7 @@
     "epochs": 1,
     "subjects": [1,2],
     "n_subjects": 2,
+    "n_servers": 1,
     "frac": 1.0,
     "local_ep": 5,
     "local_bs": 10,

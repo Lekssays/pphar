@@ -12,6 +12,7 @@
     volumes:
     - ./entry:/entry
     - ./client:/client
+    - ./config.json:/client/config.json
     - ./data/subject_id:/data/subject_id
     networks:
     - pphar
