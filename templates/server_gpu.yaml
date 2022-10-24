@@ -2,6 +2,12 @@
     container_name: core_id
     image: lekssays/pphar-client:gpu
     privileged: true
+    deploy:
+      resources:
+        reservations:
+          devices:
+          - driver: nvidia
+            capabilities: [gpu]
     environment:
     - PPHAR_CORE_ID=core_id
     - PPHAR_SERVER_PORT=5000
