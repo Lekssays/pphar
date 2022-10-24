@@ -25,5 +25,6 @@
     "stopping_rounds": 10,
     "seed": 1,
     "seq_length": 237,
-    "overlap": 0.79
+    "overlap": 0.79,
+    "encrypted": false
 }

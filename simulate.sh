@@ -1,5 +1,14 @@
 #!/bin/bash
 
+echo "Cleaning the mess.."$
+docker stop $(docker ps -a -q  --filter ancestor=lekssays/pphar-client:gpu)
+
+docker rm $(docker ps -a -q  --filter ancestor=lekssays/pphar-client:gpu)
+
+docker stop $(docker ps -a -q  --filter ancestor=lekssays/pphar-client:latest)
+
+docker rm $(docker ps -a -q  --filter ancestor=lekssays/pphar-client:latest)
+
 echo "Generating docker-compose.yaml..."
 python3 generator.py -g $1
 
@@ -14,7 +23,7 @@ echo "Starting subjects..."
 docker-compose up -d $(<peers.txt)
 
 echo "Sleeping a little bit zzz..."
-sleep 20
+sleep 5
 
 echo "Initialize the model"
 curl http://0.0.0.0:8585/init
