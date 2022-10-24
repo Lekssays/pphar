@@ -1,3 +1,4 @@
+import torch
 
 from flask import Flask, request
 
@@ -37,7 +38,7 @@ def process_request(data):
         loop.run_until_complete(send_log(message))
         return "Training finished."
 
-    if len(w_locals) < get_config(key="n_subjects") - 1:
+    if len(w_locals) < len(get_config(key="subjects")) - 1:
         w_locals.append(model)
         message = "Received a local model."
         print(message)
