@@ -7,8 +7,8 @@ def parse_args():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('-g', '--gpu',
                         dest = "gpu",
-                        help = "-1 CPU, 1 GPU",
-                        default = "-1",
+                        help = "0 CPU, 1 GPU",
+                        default = "0",
                         required = True)          
     return parser.parse_args()
 
@@ -28,6 +28,7 @@ def get_config(key: str):
 def generate_peers_configs(gpu: bool) -> list:
     configs = []
     _peers = []
+
     if gpu:
         base_filename = "./templates/peer_gpu.yaml"
     else:
@@ -74,9 +75,8 @@ def generate_docker_compose(configs: list):
 
 def main():
     print("docker-compose.yaml Generator for PPHAR")
-    gpu = bool(parse_args().gpu)
+    gpu = bool(int(parse_args().gpu))
     configs = generate_peers_configs(gpu=gpu)
-
     generate_docker_compose(configs=configs)
 
 
