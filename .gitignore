@@ -13,3 +13,5 @@ client/config.json
 server/config.json
 *.pt
 *.zip
+*.csv
+*.txt
