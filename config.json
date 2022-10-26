@@ -15,7 +15,7 @@
             "batch_size" : 128,
             "init_scale" : 0.1,
             "lr" :1e-1,
-            "local_ep" : 50,
+            "local_ep" : 5,
             "reg_coeff": 5e-4
 
 
@@ -29,19 +29,19 @@
         "lstm_model_dpsgd" : {
             "version" : 1,
             "network_params":{      
-            "n_classes": 11,
-            "n_channels": 52,
-            "num_layers" : 2,
-            "num_hidden" : 64,
-            "max_norm" : 2.0,
-            "keep_prob" : 0.15         
+                "n_classes": 11,
+                "n_channels": 52,
+                "num_layers" : 2,
+                "num_hidden" : 64,
+                "max_norm" : 2.0,
+                "keep_prob" : 0.15         
 
             },
             "training_params" : {
                 "batch_size" : 128,
                 "init_scale" : 0.1,
                 "lr" :1e-1,
-                "local_ep" : 70,
+                "local_ep" : 5,
                 "reg_coeff": 5e-4
 
             },
@@ -64,7 +64,7 @@
      }
     },
     "federated_parameters" : {
-        "epochs" : 100,
+        "epochs" : 10,
         "subjects" : [1,2,5,6,7,8],
         "dp_sgd_clients" : [6],
         "n_subjects": 6,

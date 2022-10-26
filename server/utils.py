@@ -11,7 +11,7 @@ from collections import OrderedDict
 from datetime import datetime
 
 from multiprocessing import Process
-from src.SingleLSTM import SingleLSTMEncoder
+from src.dp_sgd_network import SingleLSTMEncoder
 from helper import get_device_id
 
 device_id = -1
@@ -22,18 +22,23 @@ device = torch.device(f"cuda:{device_id}" if device_id >= 0 else "cpu")
 
 rounds = 0
 
-def get_config(key: str):
+def get_config():
     with open("config.json", "r") as f:
         config = json.load(f)
-    return config[key]
+    return config
 
 
 def initiliaze_global_model():
-    n_channels = get_config(key="n_channels")
-    n_hidden_layers = get_config(key="n_hidden_layers")
-    n_layers = get_config(key="n_layers")
-    n_classes = get_config(key="n_classes")
-    drop_prob = get_config(key="drop_prob")
+
+    configuration = get_config()
+
+    network_params = configuration["models"]["lstm_model_dpsgd"]["network_params"]
+
+    n_channels = network_params["n_channels"]
+    n_hidden_layers = network_params["num_hidden"]
+    n_layers = network_params["n_layers"]
+    n_classes = network_params["n_classes"]
+    drop_prob = network_params["keep_prob"]
     global_model = SingleLSTMEncoder(n_channels, n_hidden_layers, n_layers, n_classes, drop_prob)
     global_model.to(device)
     global_model.train()
@@ -63,7 +68,8 @@ def send_global_model(model: OrderedDict):
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     global rounds
-    subjects = get_config(key="subjects")
+    configuration = get_config()
+    subjects = configuration["federated_parameters"]["subjects"]
     for s in subjects:
         address = "subject" + str(s) + ".pphar.io"
         port = 5000
