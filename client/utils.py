@@ -77,9 +77,10 @@ def train(global_model):
     accuracy_avg = sum(local_valid_acc) / len(local_valid_acc)
     message = 'Average loss = {:.3f} | Average accuracy = {:.3f}'.format(loss_avg, accuracy_avg)
     print(message)
-    loop.run_until_complete(send_log(message))        
+    loop.run_until_complete(send_log(message))
+    message = '@{},{:.3f},{:.3f}'.format(os.getenv("PPHAR_SUBJECT_ID"), loss_avg, accuracy_avg)
+    loop.run_until_complete(send_log(message))
     torch.save(global_model, get_config(key="fed_model_save"))
-    
     return w_local
 
 def test(global_model):

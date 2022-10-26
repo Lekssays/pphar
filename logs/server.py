@@ -9,6 +9,10 @@ def write(message: str, filename: str):
 async def hello(websocket, path):
     message = await websocket.recv()
     print(message)
+    if "@" in message:
+        message = message.split("@")
+        message = message[1]
+        write(message=message, filename="metrics.csv")
     write(message=message, filename="system.log")
 
 start_server = websockets.serve(hello, "0.0.0.0", 7777)
