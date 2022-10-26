@@ -19,10 +19,10 @@ def write(filename: str, content: str):
     writing_file.close()
 
 
-def get_config(key: str):
+def get_config():
     with open("config.json", "r") as f:
         config = json.load(f)
-    return config[key]
+    return config
 
 
 def generate_peers_configs(gpu: bool) -> list:
@@ -33,8 +33,11 @@ def generate_peers_configs(gpu: bool) -> list:
         base_filename = "./templates/peer_gpu.yaml"
     else:
         base_filename = "./templates/peer.yaml"
-    subjects = get_config(key="subjects")
-    n_servers = get_config(key="n_servers")
+    
+    configuration = get_config()
+    federated_params = configuration["federated_parameters"]
+    subjects = federated_params["subjects"]
+    n_servers = federated_params["n_servers"]
     for subject in subjects:
         config_file = open(base_filename, "r")
         content = config_file.read()

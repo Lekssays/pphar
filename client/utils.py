@@ -23,10 +23,10 @@ if(train_on_gpu):
 device = torch.device(f"cuda:{device_id}" if device_id >= 0 else "cpu")
 
 
-def get_config(key: str):
+def get_config():
     with open("config.json", "r") as f:
         config = json.load(f)
-    return config[key]
+    return config
 
 
 def to_bytes(content: OrderedDict) -> bytes:
@@ -61,6 +61,8 @@ def send_model(model: OrderedDict):
 
 
 def train(global_model):
+    configuration = get_config()
+    
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     loss_train = []
@@ -80,21 +82,24 @@ def train(global_model):
     loop.run_until_complete(send_log(message))
     message = '@{},{:.3f},{:.3f}'.format(os.getenv("PPHAR_SUBJECT_ID"), loss_avg, accuracy_avg)
     loop.run_until_complete(send_log(message))
-    torch.save(global_model, get_config(key="fed_model_save"))
+    torch.save(global_model, configuration["federated_parameters"]["fed_model_save"])
     return w_local
 
 def test(global_model):
     global_model.eval()
     eval_acc_epoch = AverageMeter()
+    configuration = get_config()
+    data_processing_params = configuration["data_processing_params"]
+    dataset_params = configuration["dataset_params"]
 
     load_obj = LoadDatasetEval(
-        get_config(key="eval_src"),
-        get_config(key="seq_length"),
-        get_config(key="eval_subject"),
-        get_config(key="overlap"),
+        dataset_params["eval_src"],
+        data_processing_params["seq_length"],
+        dataset_params["eval_subject"],
+        data_processing_params["overlap"],
         LoadStrategyB()
     )
-    eval_data_loader = load_obj.prepare_eval_data_loader(get_config(key="eval_batch_size"))
+    eval_data_loader = load_obj.prepare_eval_data_loader(dataset_params["eval_batch_size"])
 
     for (_, batch) in enumerate(eval_data_loader):
         X = batch['features']

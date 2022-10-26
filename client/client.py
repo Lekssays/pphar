@@ -1,9 +1,11 @@
 import asyncio
 
 from collections import OrderedDict
+import imp
 from flask import Flask, request
 
-from src.SingleLSTM import SingleLSTMEncoder
+# from src.SingleLSTM import SingleLSTMEncoder
+from src.dp_sgd_network import SingleLSTMEncoder
 from utils import *
 
 app = Flask(__name__)
@@ -34,12 +36,14 @@ def process_request(data):
             print(message)
             loop.run_until_complete(send_log(message))
             return None
-        n_channels = get_config(key="n_channels")
-        n_hidden_layers = get_config(key="n_hidden_layers")
-        n_layers = get_config(key="n_layers")
-        n_classes = get_config(key="n_classes")
-        drop_prob = get_config(key="drop_prob")
-        global_model = SingleLSTMEncoder(n_channels, n_hidden_layers, n_layers, n_classes, drop_prob)
+            
+        configuration = get_config()
+
+        # Network Config Parameters
+        lstm_config_params = configuration['models']['lstm_model']
+        network_config_params = lstm_config_params['network_params']
+
+        global_model = SingleLSTMEncoder(network_config_params)
         global_model.load_state_dict(w_global)
         message = "Training with the new global model"
         print(message)
