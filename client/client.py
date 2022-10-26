@@ -25,26 +25,30 @@ def update():
 
 
 def process_request(data):
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    w_global = from_bytes(data)
-    if type(w_global) != OrderedDict:
-        message = "The received global model is not an OrderedDict."
+    try:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        w_global = from_bytes(data)
+        if type(w_global) != OrderedDict:
+            message = "The received global model is not an OrderedDict."
+            print(message)
+            loop.run_until_complete(send_log(message))
+            return None
+        n_channels = get_config(key="n_channels")
+        n_hidden_layers = get_config(key="n_hidden_layers")
+        n_layers = get_config(key="n_layers")
+        n_classes = get_config(key="n_classes")
+        drop_prob = get_config(key="drop_prob")
+        global_model = SingleLSTMEncoder(n_channels, n_hidden_layers, n_layers, n_classes, drop_prob)
+        global_model.load_state_dict(w_global)
+        message = "Training with the new global model"
         print(message)
         loop.run_until_complete(send_log(message))
-        return None
-    n_channels = get_config(key="n_channels")
-    n_hidden_layers = get_config(key="n_hidden_layers")
-    n_layers = get_config(key="n_layers")
-    n_classes = get_config(key="n_classes")
-    drop_prob = get_config(key="drop_prob")
-    global_model = SingleLSTMEncoder(n_channels, n_hidden_layers, n_layers, n_classes, drop_prob)
-    global_model.load_state_dict(w_global)
-    message = "Training with the new global model"
-    print(message)
-    loop.run_until_complete(send_log(message))
-    w_local = train(global_model)
-    send_model(model=w_local)
+        w_local = train(global_model)
+        send_model(model=w_local)
+    except Exception as e:
+        print(e)
+        loop.run_until_complete(send_log(str(e)))
     return w_local
 
 
