@@ -3,20 +3,32 @@ import torch
 import os
 from opacus import PrivacyEngine
 import numpy as np
-
+import websockets
 from torch.utils.tensorboard import SummaryWriter
-
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning)
 from src.helper import get_device_id
 from src.metrics import f1_score, AverageMeter, calc_accuracy,f1_score
 from src.dataset import *
 from src.losses import *
 from src.SingleLSTM import * 
-
+from datetime import datetime
+import asyncio
 
 train_on_gpu = torch.cuda.is_available()
 if(train_on_gpu):
     device_id = get_device_id(torch.cuda.is_available())
 device = torch.device(f"cuda:{device_id}" if device_id >= 0 else "cpu")
+
+async def send_log(message: str):
+    uri = "ws://172.17.0.1:7777"
+    dt = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+    message = dt + " - [" + os.getenv("PPHAR_CORE_ID") + "] " + message
+    async with websockets.connect(uri) as websocket:
+        await websocket.send(message)
+
+loop = asyncio.new_event_loop()
+asyncio.set_event_loop(loop)
 
 
 class LocalTraining():
@@ -41,15 +53,25 @@ class LocalTraining():
 
         self.plaintext_model_params = self.args["models"]["lstm_model"]
         self.dpsgd_model_params = self.args["models"]["lstm_model_dpsgd"]
-        self.epochs = self.dpsgd_model_params["training_params"]["local_ep"]
-        self.lr = self.dpsgd_model_params["training_params"]["lr"]
-        self.reg_coeff = self.dpsgd_model_params["training_params"]["reg_coeff"]
-
+        self.epochs = self.plaintext_model_params["training_params"]["local_ep"]
+        self.lr = self.plaintext_model_params["training_params"]["lr"]
+        self.reg_coeff = self.plaintext_model_params["training_params"]["reg_coeff"]
+        batch_size = self.plaintext_model_params["training_params"]["batch_size"]
         self.federated_parameters = self.args["federated_parameters"]
         self.dp_sgd_flag = False
+        
+        # message = (str(type(self.subject)))
+        # print(message)
+        # loop.run_until_complete(send_log(message))
 
-        if self.subject in self.federated_parameters["dp_sgd_clients"]:
-            
+        # If it is a DP_SGD model params are diff
+        if int(self.subject) in self.federated_parameters["dp_sgd_clients"]:
+
+            self.epochs = self.dpsgd_model_params["training_params"]["local_ep"]
+            self.lr = self.dpsgd_model_params["training_params"]["lr"]
+            self.reg_coeff = self.dpsgd_model_params["training_params"]["reg_coeff"]
+            batch_size = self.dpsgd_model_params["training_params"]["batch_size"]
+
             self.dp_sgd_flag = True
             privacy_params = self.args["privacy_params"]
             self.secure_mode = privacy_params["secure_mode"]
@@ -58,7 +80,7 @@ class LocalTraining():
             self.max_per_sample_grad_norm = privacy_params["max_per_sample_grad_norm"]
             self.privacy_engine = PrivacyEngine(secure_mode=self.secure_mode)
 
-        batch_size = self.plaintext_model_params["training_params"]["batch_size"]
+            
 
         # Loading of local training dataset and preparing data loader object for pytroch
         load_obj = LoadDatasets(
@@ -163,7 +185,7 @@ class LocalTraining():
 
         printstr = "\n----------------------------\n" f"Test Accuracy: {valid_acc_epoch.avg:.6f}"
         if self.dp_sgd_flag:
-            epsilon = self.privacy_engine.get_epsilon(self.delta)
+            self.epsilon = self.privacy_engine.get_epsilon(self.delta)
             printstr += f" (ε = {self.epsilon:.2f}, δ = {self.delta})"
         print(printstr + "\n----------------------------\n")
         return valid_acc_epoch.avg, valid_loss_epoch.avg

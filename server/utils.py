@@ -32,14 +32,8 @@ def initiliaze_global_model():
 
     configuration = get_config()
 
-    network_params = configuration["models"]["lstm_model_dpsgd"]["network_params"]
-
-    n_channels = network_params["n_channels"]
-    n_hidden_layers = network_params["num_hidden"]
-    n_layers = network_params["num_layers"]
-    n_classes = network_params["n_classes"]
-    drop_prob = network_params["keep_prob"]
-    global_model = SingleLSTMEncoder(n_channels, n_hidden_layers, n_layers, n_classes, drop_prob)
+    network_config_params = configuration["models"]["lstm_model_dpsgd"]["network_params"]
+    global_model = SingleLSTMEncoder(network_config_params)
     global_model.to(device)
     global_model.train()
     return global_model.state_dict()

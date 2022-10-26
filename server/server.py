@@ -30,15 +30,16 @@ def process_request(data):
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     model = from_bytes(data)
-    
+    configuration = get_config()
+    privacy_params = configuration["privacy_params"]
     rounds = get_rounds()
-    if rounds > get_config(key="epochs"):
+    if rounds > configuration["federated_parameters"]["epochs"]:
         message = "Training finished :)"
         print(message)
         loop.run_until_complete(send_log(message))
         return "Training finished."
 
-    if len(w_locals) < len(get_config(key="subjects")) - 1:
+    if len(w_locals) < len(configuration["federated_parameters"]["subjects"]) - 1:
         w_locals.append(model)
         message = "Received a local model."
         print(message)
@@ -48,7 +49,7 @@ def process_request(data):
         message = "Aggregating local models."
         print(message)
         loop.run_until_complete(send_log(message))   
-        if not get_config(key="encrypted"):
+        if not privacy_params["encrypted"]:
             w_global = FedAvg(w_locals)
         w_locals.clear()
         send_global_model(model=w_global)
