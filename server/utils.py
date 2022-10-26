@@ -36,7 +36,7 @@ def initiliaze_global_model():
 
     n_channels = network_params["n_channels"]
     n_hidden_layers = network_params["num_hidden"]
-    n_layers = network_params["n_layers"]
+    n_layers = network_params["num_layers"]
     n_classes = network_params["n_classes"]
     drop_prob = network_params["keep_prob"]
     global_model = SingleLSTMEncoder(n_channels, n_hidden_layers, n_layers, n_classes, drop_prob)

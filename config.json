@@ -3,12 +3,12 @@
         "lstm_model" : {
             "version" : 1,
             "network_params":{      
-            "n_classes": 11,
-            "n_channels": 52,
-            "num_layers" : 2,
-            "num_hidden" : 64,
-            "max_norm" : 2.0,
-            "keep_prob" : 0.15         
+                "n_classes": 11,
+                "n_channels": 52,
+                "num_layers" : 2,
+                "num_hidden" : 64,
+                "max_norm" : 2.0,
+                "keep_prob" : 0.15         
 
             },
             "training_params" : {
