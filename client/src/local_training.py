@@ -165,7 +165,7 @@ class LocalTraining():
         if self.dp_sgd_flag:
             self.epsilon = self.privacy_engine.get_epsilon(self.delta)
             printstr += f" | (ε = {self.epsilon:.2f}, δ = {self.delta})"
-        print(printstr)
+        print(printstr, flush=True)
         self.writer.add_scalar("training_acc/epoch", epoch_acc.value, self.current_epoch)
         self.writer.add_scalar("training_loss/epoch", epoch_loss.value, self.current_epoch)
 
@@ -187,7 +187,7 @@ class LocalTraining():
         if self.dp_sgd_flag:
             self.epsilon = self.privacy_engine.get_epsilon(self.delta)
             printstr += f" (ε = {self.epsilon:.2f}, δ = {self.delta})"
-        print(printstr + "\n----------------------------\n")
+        print(printstr + "\n----------------------------\n",flush=True)
         return valid_acc_epoch.avg, valid_loss_epoch.avg
     
     def get_args(self):

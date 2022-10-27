@@ -32,7 +32,7 @@ def initiliaze_global_model():
 
     configuration = get_config()
 
-    network_config_params = configuration["models"]["lstm_model_dpsgd"]["network_params"]
+    network_config_params = configuration["models"]["lstm_model"]["network_params"]
     global_model = SingleLSTMEncoder(network_config_params)
     global_model.to(device)
     global_model.train()
