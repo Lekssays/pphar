@@ -39,9 +39,9 @@
             },
             "training_params" : {
                 "batch_size" : 64,
-                "init_scale" : 0.1,
+                "init_scale" : 0.01,
                 "lr" :1e-1,
-                "local_ep" : 50,
+                "local_ep" : 10,
                 "reg_coeff": 5e-4
 
             },
@@ -64,9 +64,9 @@
      }
     },
     "federated_parameters" : {
-        "epochs" : 3,
+        "epochs" : 50,
         "subjects" : [1,2,5,6,7,8],
-        "dp_sgd_clients" : [6],
+        "dp_sgd_clients" : [],
         "n_subjects": 6,
         "n_servers": 1,
         "frac": 1.0,
