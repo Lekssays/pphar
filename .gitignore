@@ -2,6 +2,7 @@ client/__pycache__/*
 server/__pycache__/*
 client/log_dir/*
 data/*
+server/*
 client/src/__pycache__/*
 server/src/__pycache__/*
 *.log

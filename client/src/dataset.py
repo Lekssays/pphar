@@ -48,9 +48,17 @@ class LoadStrategyA(Strategy):
         y_train = data['y_train'].reshape(-1)
         y_test = data['y_test'].reshape(-1)
         
-        X_train_processed, y_train_processed = tsp_obj.process_standard_ts(X_train, y_train)
-        X_test_processed, y_test_processed = tsp_obj.process_standard_ts(X_test, y_test)
-        
+        print(X_train.shape)
+
+        if len(X_train.shape) <= 2: 
+            X_train_processed, y_train_processed = tsp_obj.process_standard_ts(X_train, y_train)
+            X_test_processed, y_test_processed = tsp_obj.process_standard_ts(X_test, y_test)
+        else:
+            X_train_processed = X_train
+            X_test_processed = X_test
+            y_train_processed = y_train
+            y_test_processed = y_test
+
         y_train = y_train_processed#pd.get_dummies( y_train_processed , prefix='labels' )
         y_test = y_test_processed#pd.get_dummies( y_test_processed , prefix='labels' )
         
