@@ -51,26 +51,16 @@ class LocalTraining():
         self.dataset_params = self.args["dataset_params"]
 
 
-        self.plaintext_model_params = self.args["models"]["lstm_model"]
-        self.dpsgd_model_params = self.args["models"]["lstm_model_dpsgd"]
-        self.epochs = self.plaintext_model_params["training_params"]["local_ep"]
-        self.lr = self.plaintext_model_params["training_params"]["lr"]
-        self.reg_coeff = self.plaintext_model_params["training_params"]["reg_coeff"]
-        batch_size = self.plaintext_model_params["training_params"]["batch_size"]
+        self.model_params = self.args["models"]["lstm_model"]
+        self.epochs = self.model_params["training_params"]["local_ep"]
+        self.lr = self.model_params["training_params"]["lr"]
+        self.reg_coeff = self.model_params["training_params"]["reg_coeff"]
+        batch_size = self.model_params["training_params"]["batch_size"]
         self.federated_parameters = self.args["federated_parameters"]
         self.dp_sgd_flag = False
-        
-        # message = (str(type(self.subject)))
-        # print(message)
-        # loop.run_until_complete(send_log(message))
 
         # If it is a DP_SGD model params are diff
         if int(self.subject) in self.federated_parameters["dp_sgd_clients"]:
-
-            self.epochs = self.dpsgd_model_params["training_params"]["local_ep"]
-            self.lr = self.dpsgd_model_params["training_params"]["lr"]
-            self.reg_coeff = self.dpsgd_model_params["training_params"]["reg_coeff"]
-            batch_size = self.dpsgd_model_params["training_params"]["batch_size"]
 
             self.dp_sgd_flag = True
             privacy_params = self.args["privacy_params"]
@@ -103,7 +93,7 @@ class LocalTraining():
     def train(self, model):
         
         self.model = model
-        self.optimizer = torch.optim.SGD(self.model.parameters(),
+        self.optimizer = torch.optim.Adam(self.model.parameters(),
                                          lr=self.lr,weight_decay=self.reg_coeff)
         
         if self.dp_sgd_flag:

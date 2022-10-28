@@ -6,7 +6,7 @@
                 "n_classes": 11,
                 "n_channels": 52,
                 "num_layers" : 2,
-                "num_hidden" : 16,
+                "num_hidden" : 64,
                 "max_norm" : 2.0,
                 "keep_prob" : 0.15         
 
@@ -25,48 +25,13 @@
 
             }
 
-        },
-        "lstm_model_dpsgd" : {
-            "version" : 1,
-            "network_params":{      
-                "n_classes": 11,
-                "n_channels": 52,
-                "num_layers" : 2,
-                "num_hidden" : 64,
-                "max_norm" : 2.0,
-                "keep_prob" : 0.15         
-
-            },
-            "training_params" : {
-                "batch_size" : 64,
-                "init_scale" : 0.01,
-                "lr" :1e-1,
-                "local_ep" : 10,
-                "reg_coeff": 5e-4
-
-            },
-            "testing_params" : {
-                   "batch_size" : 512
-
-            }
-
-        },
-
-        "mlp_model" : {
-            "version" : 1,
-            "train_model_params" : {
-            "comment":"there is no mlp model now. If added, remmove this comment and add params"
-            },
-            "test_model_params" : {
-                   "batch_size" : "FILL IT WHEN REQUIRED"
-
-            }
-     }
+        }
+        
     },
     "federated_parameters" : {
-        "epochs" : 5,
+        "epochs" : 50,
         "subjects" : [1,2,5,6,7,8],
-        "dp_sgd_clients" : [],
+        "dp_sgd_clients" : [6],
         "n_subjects": 6,
         "n_servers": 1,
         "frac": 1.0,

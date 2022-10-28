@@ -11,7 +11,7 @@ async def hello(websocket, path):
     print(message)
     if "@" in message:
         message = message.split("@")
-        message = message[1]
+        message = message[1] + "\n"
         write(message=message, filename="metrics.csv")
     write(message=message, filename="system.log")
 

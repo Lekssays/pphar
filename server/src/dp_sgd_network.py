@@ -12,6 +12,8 @@ class SingleLSTMEncoder(nn.Module):
         self.drop_prob = network_config_params["keep_prob"]
         self.n_channels = network_config_params["n_channels"]
         
+        print(self.n_layers,self.n_hidden,self.n_classes,self.drop_prob,self.n_channels,flush=True)
+
         if self.n_layers > 1:
             self.lstm  = DPLSTM(self.n_channels, self.n_hidden, self.n_layers, batch_first=True, dropout=self.drop_prob)
         else:

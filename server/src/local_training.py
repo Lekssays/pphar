@@ -11,7 +11,7 @@ from utils.helper import get_device_id
 from src.metrics import f1_score, AverageMeter, AverageMeterList, calc_accuracy,f1_score
 from src.dataset import *
 from src.losses import *
-from src.SingleLSTM import * 
+from src.dp_sgd_network import * 
 
 
 train_on_gpu = torch.cuda.is_available()
