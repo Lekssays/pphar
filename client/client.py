@@ -1,16 +1,14 @@
 import asyncio
 
-from collections import OrderedDict
 from flask import Flask, request
 
-from src.SingleLSTM import SingleLSTMEncoder
 from utils import *
 
 app = Flask(__name__)
 
 
 @app.route("/models", methods = ['GET', 'POST'])
-def update():
+def process_models():
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     if request.method == 'GET':
@@ -24,29 +22,32 @@ def update():
         return "Received a global model."
 
 
-def process_request(data):
+@app.route("/init", methods = ['POST'])
+def init():
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    w_global = from_bytes(data)
-    if type(w_global) != OrderedDict:
-        message = "The received global model is not an OrderedDict."
-        print(message)
-        loop.run_until_complete(send_log(message))
-        return None
-    n_channels = get_config(key="n_channels")
-    n_hidden_layers = get_config(key="n_hidden_layers")
-    n_layers = get_config(key="n_layers")
-    n_classes = get_config(key="n_classes")
-    drop_prob = get_config(key="drop_prob")
-    global_model = SingleLSTMEncoder(n_channels, n_hidden_layers, n_layers, n_classes, drop_prob)
-    global_model.load_state_dict(w_global)
-    message = "Training with the new global model"
+    message = "Received an initial global model."
     print(message)
     loop.run_until_complete(send_log(message))
-    w_local = train(global_model)
-    send_model(model=w_local)
-    return w_local
+    if get_config("encrypted"):
+        _ = process_encrypted_request(request=request, init=True)
+    else:
+        _ = process_request(request=request)
+    return message
 
+
+@app.route("/enc_models", methods = ['GET', 'POST'])
+def process_encrypted_models():
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    if request.method == 'GET':
+        return "<p>Hello, World!</p>"
+    if request.method == 'POST':
+        message = "Received an encrypted global model."
+        print(message)
+        loop.run_until_complete(send_log(message))
+        _ = process_encrypted_request(request=request)
+        return message
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)

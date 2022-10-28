@@ -2,18 +2,22 @@ import asyncio
 import copy
 import json
 import torch
+import numpy as np
 import io
 import requests
 import os
 import websockets
 
+
 from collections import OrderedDict
 from datetime import datetime
-from tqdm import tqdm
+from os import path
 from src.helper import get_device_id
 from src.dataset import LoadDatasetEval, LoadStrategyB
 from src.local_training import LocalTraining
 from src.metrics import calc_accuracy, AverageMeter
+from src.SingleLSTM import SingleLSTMEncoder
+from Pyfhel import Pyfhel, PyCtxt
 
 
 device_id = -1
@@ -42,10 +46,26 @@ def from_bytes(content: bytes) -> torch.Tensor:
     return loaded_content
 
 
-def send_message(address: str, port: int, data: bytes):
-    url = "http://" + address + ":" + str(port) + "/models"
-    res = requests.post(url=url, data=data, headers={'Content-Type': 'application/octet-stream'})
-    return res.content
+def send_message(address: str, port: int, model: bytes, HE=None, encrypted=False):
+    if encrypted:
+        url = "http://" + address + ":" + str(port) + "/enc_models"
+        payload = {
+            'context': HE.to_bytes_context().decode('cp437'),
+            'pk': HE.to_bytes_public_key().decode('cp437'),
+            'rlk': HE.to_bytes_relin_key().decode('cp437'),
+            'rtk': HE.to_bytes_rotate_key().decode('cp437'),
+            'data': model.decode('cp437'),
+            'sender': os.getenv("PPHAR_CORE_ID"),
+        }
+        res = requests.post(url=url, json=payload, headers={'Content-Type': 'application/json'})
+    else:
+        url = "http://" + address + ":" + str(port) + "/models"
+        payload = {
+            'sender': os.getenv("PPHAR_CORE_ID"),
+            'data': model.decode('cp437'),
+        }
+        res = requests.post(url=url, data=model, headers={'Content-Type': 'application/octet-stream'})
+    return res
 
 
 def send_model(model: OrderedDict):
@@ -83,6 +103,7 @@ def train(global_model):
     torch.save(global_model, get_config(key="fed_model_save"))
     return w_local
 
+
 def test(global_model):
     global_model.eval()
     eval_acc_epoch = AverageMeter()
@@ -111,3 +132,181 @@ async def send_log(message: str):
     message = dt + " - [" + os.getenv("PPHAR_CORE_ID") + "] " + message
     async with websockets.connect(uri) as websocket:
         await websocket.send(message)
+
+
+def write(filename, content):
+    f = open("/client/keys/" + filename, "wb")
+    f.write(content)
+    f.close()
+
+
+def read(filename):
+    f = open("/client/keys/" + filename, "rb")
+    return f.read()
+
+
+def save(HE):
+    s_context    = HE.to_bytes_context()
+    s_public_key = HE.to_bytes_public_key()
+    s_secret_key = HE.to_bytes_secret_key()
+    s_relin_key  = HE.to_bytes_relin_key()
+    s_rotate_key = HE.to_bytes_rotate_key()
+    write(filename="s_context", content=s_context)
+    write(filename="s_public_key", content=s_public_key)
+    write(filename="s_secret_key", content=s_secret_key)
+    write(filename="s_relin_key", content=s_relin_key)
+    write(filename="s_rotate_key", content=s_rotate_key)
+
+
+def load():
+    HE = Pyfhel()
+    HE.from_bytes_context(read('s_context'))
+    HE.from_bytes_public_key(read('s_public_key'))
+    HE.from_bytes_secret_key(read('s_secret_key'))
+    HE.from_bytes_relin_key(read('s_relin_key'))
+    HE.from_bytes_rotate_key(read('s_rotate_key'))
+    return HE
+
+
+def get_global_model(HE, enc_w_avg):
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    message = "Decrypting the encrypted global model.."
+    print(message)
+    loop.run_until_complete(send_log(message))
+    shapes = get_shapes()
+    for k in enc_w_avg.keys():
+        enc_w = PyCtxt(pyfhel=HE, bytestring=enc_w_avg[k].encode('cp437'))
+        t = HE.decryptFrac(enc_w)
+        if len(shapes) < 1:
+            t = t[0:shapes[k][0]]
+        else:
+            m = 1
+            for i in shapes[k]:
+                m *= i
+            t = t[0:m]
+            t = t.reshape(shapes[k])
+        enc_w_avg[k] = torch.tensor(t, dtype=torch.float64)
+    return enc_w_avg
+
+
+def get_shapes():
+    n_channels = get_config(key="n_channels")
+    n_hidden_layers = get_config(key="n_hidden_layers")
+    n_layers = get_config(key="n_layers")
+    n_classes = get_config(key="n_classes")
+    drop_prob = get_config(key="drop_prob")
+    model = SingleLSTMEncoder(n_channels, n_hidden_layers, n_layers, n_classes, drop_prob)
+    model.load_state_dict(torch.load("init.pt"))
+    shapes = {k:[] for k in model.keys()}
+    for k in model.keys():
+        shapes[k] = list(model[k].shape)
+    return shapes
+
+
+def init():
+    n_channels = get_config(key="n_channels")
+    n_hidden_layers = get_config(key="n_hidden_layers")
+    n_layers = get_config(key="n_layers")
+    n_classes = get_config(key="n_classes")
+    drop_prob = get_config(key="drop_prob")
+    model = SingleLSTMEncoder(n_channels, n_hidden_layers, n_layers, n_classes, drop_prob)
+    model.to(device)
+    model.train()
+    torch.save(model.state_dict(), "init.pt")
+
+
+def encrypt_model(HE, model):
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    message = "Encrypting the local model.."
+    print(message)
+    loop.run_until_complete(send_log(message))
+    for k in model.keys():
+        enc_t = HE.encrypt(model[k].numpy().flatten().astype(np.float64))
+        model[k] = enc_t
+    return model
+
+
+def send_encrypted_model(HE, model):
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    enc_model = encrypt_model(HE=HE, model=model)
+    address = os.getenv("PPHAR_SERVER_HOST")
+    port = int(os.getenv("PPHAR_SERVER_PORT"))
+    send_message(address=address, port=port, HE=HE, data=enc_model.to_bytes(), encrypted=True)
+    message = "Sent the encrypted local model to " + address
+    print(message)
+    loop.run_until_complete(send_log(message))
+    return message
+
+
+def process_encrypted_request(request, init=False):
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+
+    HE = Pyfhel()
+    if not path.exists("/client/keys/s_context"):
+        message = "Initializing Pyfhel session and data..."
+        print(message)
+        loop.run_until_complete(send_log(message))
+        HE = Pyfhel(context_params={'scheme':'ckks', 'n':2**15, 'scale':2**40, 'qi_sizes':[40]*5})
+        HE.keyGen() 
+        HE.relinKeyGen()
+        HE.rotateKeyGen()
+        save(HE=HE)
+    else:
+        message = "Loading Pyfhel session and data..."
+        print(message)
+        loop.run_until_complete(send_log(message))
+        HE = load()
+
+
+    w_global = from_bytes(request.json.get("data").encode("cp437"))
+    
+    if type(w_global) != OrderedDict:
+        message = "The received global model is not an OrderedDict."
+        print(message)
+        loop.run_until_complete(send_log(message))
+        return None
+
+    if not init:
+        w_global = get_global_model(HE=HE, enc_w_avg=w_global)
+
+    n_channels = get_config(key="n_channels")
+    n_hidden_layers = get_config(key="n_hidden_layers")
+    n_layers = get_config(key="n_layers")
+    n_classes = get_config(key="n_classes")
+    drop_prob = get_config(key="drop_prob")
+    global_model = SingleLSTMEncoder(n_channels, n_hidden_layers, n_layers, n_classes, drop_prob)
+    global_model.load_state_dict(w_global)
+    message = "Training with the new global model"
+    print(message)
+    loop.run_until_complete(send_log(message))
+    w_local = train(global_model)
+    send_encrypted_model(model=w_local)
+    return w_local
+
+
+def process_request(request):
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    w_global = from_bytes(request.json.get("data").encode("cp437"))
+    if type(w_global) != OrderedDict:
+        message = "The received global model is not an OrderedDict."
+        print(message)
+        loop.run_until_complete(send_log(message))
+        return None
+    n_channels = get_config(key="n_channels")
+    n_hidden_layers = get_config(key="n_hidden_layers")
+    n_layers = get_config(key="n_layers")
+    n_classes = get_config(key="n_classes")
+    drop_prob = get_config(key="drop_prob")
+    global_model = SingleLSTMEncoder(n_channels, n_hidden_layers, n_layers, n_classes, drop_prob)
+    global_model.load_state_dict(w_global)
+    message = "Training with the new global model"
+    print(message)
+    loop.run_until_complete(send_log(message))
+    w_local = train(global_model)
+    send_model(model=w_local)
+    return w_local
