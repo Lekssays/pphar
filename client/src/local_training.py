@@ -98,7 +98,7 @@ class LocalTraining():
             epoch_f1.update(f1_macro,X.size(0))
             self.current_iteration += 1
             current_batch += 1
-        print("current_epoch {} / epoch_acc.avg {}", str(epoch_acc.avg), str(self.current_epoch), flush=True)
+        print(f"current_local_epoch {self.current_epoch} / local_epoch_acc.avg {epoch_acc.avg}", flush=True)
         self.writer.add_scalar("training_acc/epoch", epoch_acc.value, self.current_epoch)
         self.writer.add_scalar("training_loss/epoch", epoch_loss.value, self.current_epoch)
 

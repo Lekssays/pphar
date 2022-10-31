@@ -57,14 +57,13 @@ def send_message(address: str, port: int, model: bytes, HE=None, encrypted=False
             'data': model.decode('cp437'),
             'sender': os.getenv("PPHAR_CORE_ID"),
         }
-        res = requests.post(url=url, json=payload, headers={'Content-Type': 'application/json'})
     else:
         url = "http://" + address + ":" + str(port) + "/models"
         payload = {
             'sender': os.getenv("PPHAR_CORE_ID"),
             'data': model.decode('cp437'),
         }
-        res = requests.post(url=url, data=model, headers={'Content-Type': 'application/octet-stream'})
+    res = requests.post(url=url, json=payload, headers={'Content-Type': 'application/json'})
     return res
 
 
@@ -73,7 +72,7 @@ def send_model(model: OrderedDict):
     asyncio.set_event_loop(loop)
     address = os.getenv("PPHAR_SERVER_HOST")
     port = int(os.getenv("PPHAR_SERVER_PORT"))
-    send_message(address=address, port=port,data=to_bytes(content=model))
+    send_message(address=address, port=port,model=to_bytes(content=model))
     message = "Sending the local model to " + address
     print(message)
     loop.run_until_complete(send_log(message))
@@ -234,7 +233,7 @@ def send_encrypted_model(HE, model):
     enc_model = encrypt_model(HE=HE, model=model)
     address = os.getenv("PPHAR_SERVER_HOST")
     port = int(os.getenv("PPHAR_SERVER_PORT"))
-    send_message(address=address, port=port, HE=HE, data=enc_model.to_bytes(), encrypted=True)
+    send_message(address=address, port=port, HE=HE, model=enc_model.to_bytes(), encrypted=True)
     message = "Sent the encrypted local model to " + address
     print(message)
     loop.run_until_complete(send_log(message))

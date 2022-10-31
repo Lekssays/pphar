@@ -5,9 +5,9 @@ docker stop $(docker ps -a -q  --filter ancestor=lekssays/pphar-client:gpu)
 
 docker rm $(docker ps -a -q  --filter ancestor=lekssays/pphar-client:gpu)
 
-docker stop $(docker ps -a -q  --filter ancestor=lekssays/pphar-client:latest)
+docker stop $(docker ps -a -q  --filter ancestor=lekssays/pphar-client:cpu)
 
-docker rm $(docker ps -a -q  --filter ancestor=lekssays/pphar-client:latest)
+docker rm $(docker ps -a -q  --filter ancestor=lekssays/pphar-client:cpu)
 
 echo "Generating docker-compose.yaml..."
 python3 generator.py -g $1

@@ -14,11 +14,10 @@ def process_models():
     if request.method == 'GET':
         return "<p>Hello, World!</p>"
     if request.method == 'POST':
-        data = request.get_data()
         message = "Received a global model."
         print(message)
         loop.run_until_complete(send_log(message))
-        _ = process_request(data=data)
+        _ = process_request(request=request)
         return "Received a global model."
 
 

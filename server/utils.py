@@ -60,7 +60,7 @@ def from_bytes(content: bytes) -> torch.Tensor:
 
 
 def send_message(address: str, port: int, data: bytes, init: bool, encrypted: bool):
-    if init:
+    if init and rounds == 0:
         url = "http://" + address + ":" + str(port) + "/init"
     else:
         if encrypted:
@@ -85,7 +85,7 @@ def send_global_model(model, init, encrypted):
         if encrypted:
             message = "Sending the encrypted global model to " + address + " / " + str(rounds)
         else:   
-            if init:
+            if init and rounds == 0:
                 message = "Sending the initial global model to " + address + " / " + str(rounds)
             else:
                 message = "Sending the global model to " + address + " / " + str(rounds)
@@ -128,7 +128,7 @@ def process_request(request):
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
 
-    model = from_bytes(request.json.get("data"))
+    model = from_bytes(request.json.get("data").encode('cp437'))
     sender = request.json.get('sender')
     
     rounds = get_rounds()
@@ -138,30 +138,29 @@ def process_request(request):
         loop.run_until_complete(send_log(message))
         return "Training finished."
 
+    
     if len(w_locals) < len(get_config(key="subjects")) - 1:
         w_locals.append(model)
         message = f"Received a local model from {sender}"
-        print(message)
-        loop.run_until_complete(send_log(message))   
+        print(message, flush=True)
+        loop.run_until_complete(send_log(message))
         return message
     else:
         message = "Aggregating local models."
-        print(message)
-        loop.run_until_complete(send_log(message))   
+        print(message, flush=True)
+        loop.run_until_complete(send_log(message))
         w_global = FedAvg(w_locals)
         w_locals.clear()
 
         message = "Saving the aggregated global model locally."
-        print(message)
+        print(message, flush=True)
         loop.run_until_complete(send_log(message))
         torch.save(w_global, "w_global.pt")
 
         send_global_model(model=w_global, init=False, encrypted=False)
-        print(w_global)
         message = f"Sent aggregated global model to {sender}"
-        print(message)
+        print(message, flush=True)
         loop.run_until_complete(send_log(message))
-    
         return message
 
 

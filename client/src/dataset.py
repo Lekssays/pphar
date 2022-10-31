@@ -47,8 +47,6 @@ class LoadStrategyA(Strategy):
         X_test = data['X_test']
         y_train = data['y_train'].reshape(-1)
         y_test = data['y_test'].reshape(-1)
-        
-        print(X_train.shape)
 
         if len(X_train.shape) <= 2: 
             X_train_processed, y_train_processed = tsp_obj.process_standard_ts(X_train, y_train)

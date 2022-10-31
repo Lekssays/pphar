@@ -10,3 +10,5 @@ tensorboard
 flask
 asyncio
 websockets
+cmake
+Pyfhel
