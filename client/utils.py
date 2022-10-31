@@ -44,6 +44,7 @@ def from_bytes(content: bytes) -> torch.Tensor:
 
 def send_message(address: str, port: int, data: bytes):
     url = "http://" + address + ":" + str(port) + "/models"
+    print(url,flush=True)
     res = requests.post(url=url, data=data, headers={'Content-Type': 'application/octet-stream'})
     return res.content
 

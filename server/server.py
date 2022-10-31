@@ -30,20 +30,18 @@ def process_request(data):
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     model = from_bytes(data)
-    
     rounds = get_rounds()
     if rounds > get_config(key="epochs"):
         message = "Training finished :)"
         print(message)
         loop.run_until_complete(send_log(message))
         return "Training finished."
-
     if len(w_locals) < len(get_config(key="subjects")) - 1:
         w_locals.append(model)
         message = "Received a local model."
         print(message)
         loop.run_until_complete(send_log(message))   
-        return "Received a local model."
+        return "Received a local modesl."
     else:
         message = "Aggregating local models."
         print(message)
@@ -55,7 +53,6 @@ def process_request(data):
         message = "Sent aggregated global model."
         print(message)
         loop.run_until_complete(send_log(message))
-
         message = "Saving the aggregated global model locally."
         print(message)
         loop.run_until_complete(send_log(message))
