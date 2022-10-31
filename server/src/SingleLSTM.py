@@ -1,7 +1,7 @@
 from torch import nn
 import torch
 import numpy as np
-
+from opacus.layers import DPLSTM
 
 class SingleLSTMEncoder(nn.Module):
     def __init__(self,n_channels = 52, n_hidden_layers = 128,  n_layers=2, n_classes=11, drop_prob=0.5):

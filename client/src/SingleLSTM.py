@@ -1,7 +1,7 @@
-from torch import nn
+from torch import batch_norm, nn
 import torch
 import numpy as np
-
+from opacus.layers import DPLSTM
 
 class SingleLSTMEncoder(nn.Module):
     def __init__(self,n_channels = 52, n_hidden_layers = 128,  n_layers=2, n_classes=11, drop_prob=0.5):
@@ -14,9 +14,9 @@ class SingleLSTMEncoder(nn.Module):
         self.n_channels = n_channels
         
         if self.n_layers > 1:
-            self.lstm  = nn.LSTM(self.n_channels, self.n_hidden, self.n_layers, dropout=self.drop_prob)
+            self.lstm  = nn.LSTM(self.n_channels, self.n_hidden, self.n_layers, dropout=self.drop_prob, batch_first=True)
         else:
-            self.lstm  = nn.LSTM(self.n_channels, self.n_hidden, self.n_layers)
+            self.lstm  = nn.LSTM(self.n_channels, self.n_hidden, self.n_layers, dropout=self.drop_prob, batch_first=True)
         self.fc = nn.Linear(self.n_hidden, self.n_classes)
         self.dropout = nn.Dropout(self.drop_prob)
         

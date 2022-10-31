@@ -30,7 +30,11 @@ class LocalTraining():
         self.subject = subject
         self.set_device()
 
-        
+        self.dpsgd_flag = False
+
+        if int(self.subject) in self.args.dp_sgd_clients:
+            self.dpsgd_flag = True
+
         self.current_epoch = 0
         self.current_iteration = 0
         self.best_valid_acc = 0
