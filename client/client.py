@@ -2,8 +2,9 @@ import asyncio
 
 from collections import OrderedDict
 from flask import Flask, request
-
+import opacus
 from src.SingleLSTM import SingleLSTMEncoder
+from src.DPLSTM import DPLSTMEncoder
 from utils import *
 
 app = Flask(__name__)
@@ -33,13 +34,22 @@ def process_request(data):
         print(message)
         loop.run_until_complete(send_log(message))
         return None
+    drop_keys = ["lstm.l0.ih.weight", "lstm.l0.ih.bias", "lstm.l0.hh.weight", "lstm.l0.hh.bias"]
     n_channels = get_config(key="n_channels")
     n_hidden_layers = get_config(key="n_hidden_layers")
     n_layers = get_config(key="n_layers")
     n_classes = get_config(key="n_classes")
     drop_prob = get_config(key="drop_prob")
-    global_model = SingleLSTMEncoder(n_channels, n_hidden_layers, n_layers, n_classes, drop_prob)
-    global_model.load_state_dict(w_global)
+    subject = os.getenv("PPHAR_SUBJECT_ID")
+    if int(subject) in get_config(key="dp_sgd_clients"):
+        global_model = DPLSTMEncoder(n_channels, n_hidden_layers, n_layers, n_classes, drop_prob)
+        for keys in w_global.keys():
+            if keys not in drop_keys:
+                global_model.state_dict()[keys] = w_global[keys]
+    else:
+        global_model = SingleLSTMEncoder(n_channels, n_hidden_layers, n_layers, n_classes, drop_prob)
+        global_model.load_state_dict(w_global)
+        
     message = "Training with the new global model"
     print(message)
     loop.run_until_complete(send_log(message))

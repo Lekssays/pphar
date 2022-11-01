@@ -71,7 +71,7 @@ class LocalTraining():
         
         self.model = model
         self.optimizer = torch.optim.Adam(self.model.parameters(),
-                                         lr=self.args["lr"],weight_decay=self.args["reg_coef"])
+                                         lr=self.lr,weight_decay=self.args["reg_coef"])
         
         if self.dpsgd_flag:
             self.model, self.optimizer, self.train_data_loader = self.privacy_engine.make_private_with_epsilon(
