@@ -10,7 +10,7 @@
     "local_bs": 10,
     "batch_size": 64,
     "lr": 0.001,
-    "lr_dpsgd": 0.1,
+    "lr_dpsgd": 0.01,
     "reg_coef": 5e-4,
     "momentum": 0.5,
     "drop_prob": 0.15,
