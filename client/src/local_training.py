@@ -36,7 +36,7 @@ class LocalTraining():
         self.current_iteration = 0
         self.best_valid_acc = 0
         self.epochs = self.args["local_ep"]
-
+        self.lr = self.args["lr"]
 
             
         if int(self.subject) in self.args["dp_sgd_clients"]:
