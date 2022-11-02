@@ -15,7 +15,7 @@ def process_models():
         return "<p>Hello, World!</p>"
     if request.method == 'POST':
         message = "Received a global model."
-        print(message)
+        print(message, flush=True)
         loop.run_until_complete(send_log(message))
         _ = process_request(request=request)
         return "Received a global model."
@@ -26,9 +26,10 @@ def init():
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     message = "Received an initial global model."
-    print(message)
+    print(message, flush=True)
     loop.run_until_complete(send_log(message))
     if get_config("encrypted"):
+        print("encrypted init", flush=True)
         _ = process_encrypted_request(request=request, init=True)
     else:
         _ = process_request(request=request)
@@ -43,7 +44,7 @@ def process_encrypted_models():
         return "<p>Hello, World!</p>"
     if request.method == 'POST':
         message = "Received an encrypted global model."
-        print(message)
+        print(message, flush=True)
         loop.run_until_complete(send_log(message))
         _ = process_encrypted_request(request=request)
         return message

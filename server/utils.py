@@ -70,10 +70,11 @@ def send_message(address: str, port: int, data: bytes, init: bool, encrypted: bo
     payload = {
         "data": data.decode("cp437"),
     }
+    print(f"Model sent to {url}")
     return requests.post(url=url, json=payload, headers={'Content-Type': 'application/json'})
 
 
-def send_global_model(model, init, encrypted):
+def send_global_model(model, init=False, encrypted=False):
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     global rounds
@@ -89,7 +90,7 @@ def send_global_model(model, init, encrypted):
                 message = "Sending the initial global model to " + address + " / " + str(rounds)
             else:
                 message = "Sending the global model to " + address + " / " + str(rounds)
-        print(message)
+        print(message, flush=True)
         loop.run_until_complete(send_log(message))   
         p = Process(target=send_message, args=(address, port, data, init, encrypted, ))
         p.start()
@@ -112,11 +113,11 @@ def get_rounds():
 
 def EncFedAvg(HE, enc_w):
     n = 1.0 / len(enc_w)
-    enc_w_avg = copy.deepcopy(enc_w[0])
+    enc_w_avg = enc_w[0]
     for k in enc_w_avg.keys():
         for i in range(1, len(enc_w)):
             enc_w_avg[k] = enc_w[i][k] + enc_w_avg[k]
-        enc_w_avg[k] = enc_w_avg[k] * n
+        enc_w_avg[k] *= n
         HE.relinKeyGen()
         HE.rescale_to_next(enc_w_avg[k])
         enc_w_avg[k] = enc_w_avg[k].to_bytes().decode('cp437')
@@ -134,12 +135,12 @@ def process_request(request):
     rounds = get_rounds()
     if rounds > get_config(key="epochs"):
         message = "Training finished :)"
-        print(message)
+        print(message, flush=True)
         loop.run_until_complete(send_log(message))
         return "Training finished."
 
     
-    if len(w_locals) < len(get_config(key="subjects")) - 1:
+    if len(w_locals) and len(w_locals) <= len(get_config(key="subjects")) - 1:
         w_locals.append(model)
         message = f"Received a local model from {sender}"
         print(message, flush=True)
@@ -172,7 +173,7 @@ def process_encrypted_request(request):
     rounds = get_rounds()
     if rounds > get_config(key="epochs"):
         message = "Training finished :)"
-        print(message)
+        print(message, flush=True)
         loop.run_until_complete(send_log(message))
         return "Training finished."
 
@@ -181,25 +182,29 @@ def process_encrypted_request(request):
     HE.from_bytes_public_key(request.json.get('pk').encode('cp437'))
     HE.from_bytes_relin_key(request.json.get('rlk').encode('cp437'))
     HE.from_bytes_rotate_key(request.json.get('rtk').encode('cp437'))
-    cx = PyCtxt(pyfhel=HE, bytestring=request.json.get('data').encode('cp437'))
+
+    enc_model = from_bytes(content=request.json.get('data').encode('cp437'))
+    for k in enc_model.keys():
+        enc_model[k] = PyCtxt(pyfhel=HE, bytestring=enc_model[k])
+
     sender = request.json.get('sender')
-    print(f"Received HE={HE} and cx={cx} from {sender}")
+    print(f"Received HE={HE} from {sender}")
 
     if len(w_locals) < len(get_config(key="subjects")) - 1:
-        w_locals.append(cx)
+        w_locals.append(enc_model)
         message = f"Received an encrypted local model from {sender}"
-        print(message)
+        print(message, flush=True)
         loop.run_until_complete(send_log(message))
         return message
     else:
         message = f"Aggregating encrypted local models from {sender}"
-        print(message)
+        print(message, flush=True)
         loop.run_until_complete(send_log(message))   
         enc_w_global = EncFedAvg(HE=HE, enc_w=w_locals)
-        print(enc_w_global)
         w_locals.clear()
+
         send_global_model(model=enc_w_global, init=False, encrypted=True)
         message = f"Sent aggregated global model to {sender}"
-        print(message)
+        print(message, flush=True)
         loop.run_until_complete(send_log(message))
         return enc_w_global

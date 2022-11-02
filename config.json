@@ -26,5 +26,5 @@
     "seed": 1,
     "seq_length": 200,
     "overlap": 0.79,
-    "encrypted": false
+    "encrypted": true
 }
