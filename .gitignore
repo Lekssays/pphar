@@ -16,5 +16,9 @@ server/config.json
 *.zip
 *.csv
 *.txt
-client/keys/*
+client/keys/s_context
+client/keys/s_public_key
+client/keys/s_relin_key
+client/keys/s_rotate_key
+client/keys/s_secret_key
 test/*
