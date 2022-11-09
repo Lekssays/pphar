@@ -90,7 +90,7 @@ class LocalTraining():
 
             valid_acc, valid_loss =  self.validate()
             self.writer.add_scalar("validation_acc/epoch", valid_acc, self.current_epoch)
-            is_best = valid_acc > self.best_valid_acc
+            is_best = valid_acc >= self.best_valid_acc
             if is_best:
                 self.best_valid_acc = valid_acc
                 best_parameters = self.model.state_dict()
