@@ -22,9 +22,7 @@ from helper import get_device_id
 
 
 device_id = -1
-train_on_gpu = torch.cuda.is_available()
-if(train_on_gpu):
-    device_id = get_device_id(torch.cuda.is_available())
+device_id = get_device_id(torch.cuda.is_available())
 device = torch.device(f"cuda:{device_id}" if device_id >= 0 else "cpu")
 
 rounds = 0
