@@ -228,7 +228,7 @@ def encrypt_model(HE, model):
         if device_id == -1:
             enc_t = HE.encrypt(model[k].numpy().flatten().astype(np.float64))
         else:
-            enc_t = HE.encrypt(model[k].cpu().numpy().flatten().astype(np.float64))
+            enc_t = HE.encrypt(model[k].detach().cpu().numpy().flatten().astype(np.float64))
         model[k] = enc_t.to_bytes()
     return model
 
