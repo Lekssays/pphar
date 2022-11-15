@@ -16,12 +16,7 @@ from src.local_training import LocalTraining
 from src.metrics import calc_accuracy, AverageMeter
 
 
-device_id = -1
-train_on_gpu = torch.cuda.is_available()
-if(train_on_gpu):
-    device_id = get_device_id(torch.cuda.is_available())
-device = torch.device(f"cuda:{device_id}" if device_id >= 0 else "cpu")
-
+global device
 
 def get_config(key: str):
     with open("config.json", "r") as f:
@@ -44,7 +39,6 @@ def from_bytes(content: bytes) -> torch.Tensor:
 
 def send_message(address: str, port: int, data: bytes):
     url = "http://" + address + ":" + str(port) + "/models"
-    print(url,flush=True)
     res = requests.post(url=url, data=data, headers={'Content-Type': 'application/octet-stream'})
     return res.content
 
@@ -62,13 +56,17 @@ def send_model(model: OrderedDict):
 
 
 def train(global_model):
+    device_id = -1
+    device_id = get_device_id(torch.cuda.is_available())
+    global device
+    device = torch.device(f"cuda:{device_id}" if device_id >= 0 else "cpu")
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     loss_train = []
     w_local = None
     loss_locals = []
     local_valid_acc = []
-    local = LocalTraining()
+    local = LocalTraining(device)
     w, loss, valid_acc = local.train(model=copy.deepcopy(global_model).to(device))
     w_local = w
     loss_locals.append(copy.deepcopy(loss))
@@ -87,12 +85,13 @@ def train(global_model):
 def test(global_model):
     global_model.eval()
     eval_acc_epoch = AverageMeter()
-
+    global device
     load_obj = LoadDatasetEval(
         get_config(key="eval_src"),
         get_config(key="seq_length"),
         get_config(key="eval_subject"),
         get_config(key="overlap"),
+        device,
         LoadStrategyB()
     )
     eval_data_loader = load_obj.prepare_eval_data_loader(get_config(key="eval_batch_size"))
