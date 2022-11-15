@@ -13,11 +13,6 @@ from src.losses import *
 from src.SingleLSTM import * 
 
 
-train_on_gpu = torch.cuda.is_available()
-if(train_on_gpu):
-    device_id = get_device_id(torch.cuda.is_available())
-device = torch.device(f"cuda:{device_id}" if device_id >= 0 else "cpu")
-
 class trainingAgent:
     
     def __init__(self, subject,n_channels = 52, n_hidden_layers = 128,  n_layers=2, n_classes=11, drop_prob=0.5, batch_size = 64, epochs=5, lr=5e-4, reg_coef=5e-4, verbose=True, model_dir=None):
@@ -35,7 +30,7 @@ class trainingAgent:
         self.model_dir = model_dir
         
         self.loss = CrossEntropyLoss2d()
-        self.set_device()
+        # self.set_device()
         
         self.model = SingleLSTMEncoder(self.n_channels, self.n_hidden_layers, self.n_layers, self.n_classes, self.drop_prob)
         self.model.to(self.device)
