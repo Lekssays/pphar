@@ -11,21 +11,48 @@ docker rm $(docker ps -a -q  --filter ancestor=lekssays/pphar-client:cpu)
 
 rm ./client/init.pt
 
-echo "Generating docker-compose.yaml..."
-python3 generator.py -g $1
 
+if [[ $# -lt 1 ]] ; then
+  printHelp
+  exit 0
+else
+  MODE=$1
+  LOCAL=$2
+  shift
+fi
+
+echo "Generating docker-compose.yaml..."
+python3 generator.py -g $MODE
 sleep 5
 
-# echo "Starting servers..."
-# docker-compose up -d $(<servers.txt)
+if [ "${LOCAL}" == "1" ]; then
+    echo "Starting servers..."
+    docker-compose up -d $(<servers.txt)
+    sleep 5
+    echo "Initialize the model"
+    curl http://0.0.0.0:8585/init
+elif [ "${LOCAL}" == "2" ]; then
+    echo "Starting subjects..."
+    docker-compose up -d $(<peers.txt)
+else
+    echo "Starting servers AND subjects"
+    docker-compose up -d $(<servers.txt)
+    sleep 2
+    docker-compose up -d $(<peers.txt)
+    echo "Sleeping a little bit zzz..."
+    sleep 5
+    echo "Initialize the model"
+    curl http://0.0.0.0:8585/init
+fi
 
-# sleep 5
 
-echo "Starting subjects..."
-docker-compose up -d $(<peers.txt)
-
-# echo "Sleeping a little bit zzz..."
-# sleep 5
-
-# echo "Initialize the model"
-#curl http://0.0.0.0:8585/init
+function printHelp() {
+  echo "Usage: "
+  echo "  simulate.sh <Mode> <Local>"
+  echo "    Modes:"
+  echo "      "$'\e[0;32m'1$'\e[0m' - GPU
+  echo "      "$'\e[0;32m'0$'\e[0m' - CPU
+  echo "    Local:"
+  echo "      "$'\e[0;32m'1$'\e[0m' - Running the aggregating server
+  echo "      "$'\e[0;32m'2$'\e[0m' - Running the subjects
+}
