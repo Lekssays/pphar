@@ -71,7 +71,7 @@ def send_message(address: str, port: int, data: bytes, init: bool, encrypted: bo
         "data": data.decode("cp437"),
     }
     print(f"Model sent to {url}")
-    return requests.post(url=url, json=payload, headers={'Content-Type': 'application/json'})
+    return requests.post(url=url, data=json.dumps(payload))
 
 
 def send_global_model(model, init=False, encrypted=False):
@@ -164,30 +164,31 @@ def process_request(request):
         loop.run_until_complete(send_log(message))
         return message
 
-
 def process_encrypted_request(request):
     global w_locals
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     
     rounds = get_rounds()
-    if rounds > get_config(key="epochs"):
+    if rounds > get_config(key="epochs") - 1:
         message = "Training finished :)"
         print(message, flush=True)
         loop.run_until_complete(send_log(message))
         return "Training finished."
 
-    HE = Pyfhel()
-    HE.from_bytes_context(request.json.get('context').encode('cp437'))
-    HE.from_bytes_public_key(request.json.get('pk').encode('cp437'))
-    HE.from_bytes_relin_key(request.json.get('rlk').encode('cp437'))
-    HE.from_bytes_rotate_key(request.json.get('rtk').encode('cp437'))
+    request = json.loads(request.get_data())
 
-    enc_model = from_bytes(content=request.json.get('data').encode('cp437'))
+    HE = Pyfhel()
+    HE.from_bytes_context(request['context'].encode('cp437'))
+    HE.from_bytes_public_key(request['pk'].encode('cp437'))
+    HE.from_bytes_relin_key(request['rlk'].encode('cp437'))
+    HE.from_bytes_rotate_key(request['rtk'].encode('cp437'))
+
+    enc_model = from_bytes(content=request['data'].encode('cp437'))
     for k in enc_model.keys():
         enc_model[k] = PyCtxt(pyfhel=HE, bytestring=enc_model[k])
 
-    sender = request.json.get('sender')
+    sender = request['sender']
     print(f"Received HE={HE} from {sender}")
 
     if len(w_locals) < len(get_config(key="subjects")) - 1:

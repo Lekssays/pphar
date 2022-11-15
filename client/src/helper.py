@@ -3,6 +3,7 @@
 import sys
 import subprocess
 import numpy as np
+import os
 
 class Logger:
     
@@ -49,5 +50,10 @@ def get_device_id(cuda_is_available):
     gpu_index = stats[:, 1].argmax()
     available_mem_on_gpu = stats[gpu_index, 1]
     device_id = gpu_index if available_mem_on_gpu > 2000 else -1
-    logger.log(f"Automatically selected device id {device_id} (>= 0 for GPU, -1 for CPU)")
+    # logger.log(f"Automatically selected device id {device_id} (>= 0 for GPU, -1 for CPU)")
+    if int(os.getenv("PPHAR_SUBJECT_ID")) % 2 == 0:
+        device_id = 0
+    else:
+        device_id = 1
+    logger.log(f"Selected device id {device_id}")
     return device_id

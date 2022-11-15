@@ -8,7 +8,6 @@ import requests
 import os
 import websockets
 
-
 from collections import OrderedDict
 from datetime import datetime
 from os import path
@@ -46,8 +45,8 @@ def from_bytes(content: bytes) -> torch.Tensor:
     return loaded_content
 
 
-def send_message(address: str, port: int, model: bytes, HE=None, encrypted=False):
-    if encrypted:
+def send_message(address: str, port: int, model: bytes, HE=None):
+    if bool(get_config(key="encrypted")):
         url = "http://" + address + ":" + str(port) + "/enc_models"
         payload = {
             'context': HE.to_bytes_context().decode('cp437'),
@@ -57,13 +56,15 @@ def send_message(address: str, port: int, model: bytes, HE=None, encrypted=False
             'data': to_bytes(content=model).decode('cp437'),
             'sender': os.getenv("PPHAR_CORE_ID"),
         }
+        print("json.dumps(payload)", len(json.dumps(payload)))
+        res = requests.post(url, data=json.dumps(payload))
     else:
         url = "http://" + address + ":" + str(port) + "/models"
         payload = {
             'sender': os.getenv("PPHAR_CORE_ID"),
             'data': to_bytes(content=model).decode('cp437'),
         }
-    res = requests.post(url=url, json=payload, headers={'Content-Type': 'application/json'})
+        res = requests.post(url=url, json=payload, headers={'Content-Type': 'application/json'})
     return res
 
 
@@ -225,11 +226,17 @@ def encrypt_model(HE, model):
     print(message, flush=True)
     loop.run_until_complete(send_log(message))
     for k in model.keys():
-        if device_id == -1:
-            enc_t = HE.encrypt(model[k].numpy().flatten().astype(np.float64))
-        else:
-            enc_t = HE.encrypt(model[k].cpu().numpy().flatten().astype(np.float64))
+        arr_y = np.array(model[k].tolist(), dtype=np.float64)
+        enc_p = HE.encodeFrac(arr_y.flatten())
+        del arr_y
+        enc_t = HE.encryptPtxt(enc_p)
+        del enc_p
+        # if device_id == -1:
+        #     enc_t = HE.encrypt(model[k].numpy().flatten().astype(np.float32))
+        # else:
+        #     enc_t = HE.encrypt(model[k].detach().cpu().numpy().flatten().astype(np.float32))
         model[k] = enc_t.to_bytes()
+        del enc_t
     return model
 
 
@@ -239,7 +246,7 @@ def send_encrypted_model(HE, model):
     enc_model = encrypt_model(HE=HE, model=model)
     address = os.getenv("PPHAR_SERVER_HOST")
     port = int(os.getenv("PPHAR_SERVER_PORT"))
-    send_message(address=address, port=port, HE=HE, model=enc_model, encrypted=True)
+    send_message(address=address, port=port, HE=HE, model=enc_model)
     message = "Sent the encrypted local model to " + address
     print(message, flush=True)
     loop.run_until_complete(send_log(message))
@@ -255,8 +262,8 @@ def process_encrypted_request(request, init=False):
         message = "Initializing Pyfhel session and data..."
         print(message, flush=True)
         loop.run_until_complete(send_log(message))
-        HE = Pyfhel(context_params={'scheme':'ckks', 'n':2**15, 'scale':2**40, 'qi_sizes':[40]*5})
-        HE.keyGen() 
+        HE = Pyfhel(context_params={'scheme':'ckks', 'n':2**15, 'scale':2**30, 'qi_sizes':[60, 30, 30, 30, 60]})
+        HE.keyGen()
         HE.relinKeyGen()
         HE.rotateKeyGen()
         save(HE=HE)
@@ -266,7 +273,8 @@ def process_encrypted_request(request, init=False):
         loop.run_until_complete(send_log(message))
         HE = load()
 
-    w_global = from_bytes(request.json.get("data").encode("cp437"))
+    request = json.loads(request.get_data())
+    w_global = from_bytes(request["data"].encode('cp437'))
     if type(w_global) != OrderedDict:
         message = "The received global model is not an OrderedDict."
         print(message, flush=True)
