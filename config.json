@@ -1,9 +1,9 @@
 {
-    "epochs": 2,
+    "epochs": 50,
     "subjects": [1,2,5,6,7,8],
     "n_servers": 1,
     "frac": 1.0,
-    "local_ep": 5,
+    "local_ep": 50,
     "local_bs": 10,
     "batch_size": 64,
     "lr": 0.001,

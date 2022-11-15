@@ -6,7 +6,9 @@ import torch
 import requests
 import os
 import websockets
-
+import psutil
+import time
+import random
 
 from collections import OrderedDict
 from datetime import datetime
@@ -71,7 +73,7 @@ def send_message(address: str, port: int, data: bytes, init: bool, encrypted: bo
         "data": data.decode("cp437"),
     }
     print(f"Model sent to {url}")
-    return requests.post(url=url, data=json.dumps(payload))
+    return requests.post(url=url, data=json.dumps(payload), timeout=None)
 
 
 def send_global_model(model, init=False, encrypted=False):
@@ -133,6 +135,15 @@ def process_request(request):
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
 
+    free = psutil.virtual_memory().free/(1024**2)
+    while free < 1024:
+        wait = random.randint(2,8)
+        message = f"Not enough memory :( waiting {wait} seconds for our slot..."
+        print(message, flush=True)
+        loop.run_until_complete(send_log(message))
+        time.sleep(wait)
+        free = psutil.virtual_memory().free/(1024**2)
+
     model = from_bytes(request.json.get("data").encode('cp437'))
     sender = request.json.get('sender')
     
@@ -163,6 +174,8 @@ def process_request(request):
         torch.save(w_global, "w_global.pt")
 
         send_global_model(model=w_global, init=False, encrypted=False)
+        del w_global
+
         message = f"Sent aggregated global model to {sender}"
         print(message, flush=True)
         loop.run_until_complete(send_log(message))

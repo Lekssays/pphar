@@ -67,7 +67,7 @@ def send_message(address: str, port: int, model: bytes, HE=None):
             'sender': os.getenv("PPHAR_CORE_ID"),
             'data': to_bytes(content=model).decode('cp437'),
         }
-        res = requests.post(url=url, json=payload, headers={'Content-Type': 'application/json'})
+        res = requests.post(url=url, json=payload, headers={'Content-Type': 'application/json'}, timeout=None)
     return res
 
 
