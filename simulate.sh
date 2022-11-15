@@ -19,7 +19,7 @@ sleep 5
 # echo "Starting servers..."
 # docker-compose up -d $(<servers.txt)
 
-sleep 5
+# sleep 5
 
 echo "Starting subjects..."
 docker-compose up -d $(<peers.txt)

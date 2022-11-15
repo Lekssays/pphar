@@ -81,8 +81,12 @@ def send_global_model(model, init=False, encrypted=False):
     subjects = get_config(key="subjects")
     data = to_bytes(content=model)
     for s in subjects:
-        address = "subject" + str(s) + ".pphar.io"
-        port = 5000
+        if get_config("local"):
+            address = "subject" + str(s) + ".pphar.io"
+            port = 5000
+        else:
+            address = os.getenv("PPHAR_REMOTE_TRAINING_SERVER")
+            port = int("444" + str(s))
         if encrypted:
             message = "Sending the encrypted global model to " + address + " / " + str(rounds)
         else:   
@@ -99,7 +103,7 @@ def send_global_model(model, init=False, encrypted=False):
 
 
 async def send_log(message: str):
-    uri = "ws://172.17.0.1:7777"
+    uri = os.getenv("PPHAR_LOG_SERVER_ENDPOINT")
     dt = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
     message = dt + " - [" + os.getenv("PPHAR_CORE_ID") + "] " + message
     async with websockets.connect(uri) as websocket:

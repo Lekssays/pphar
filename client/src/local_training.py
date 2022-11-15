@@ -27,13 +27,9 @@ class LocalTraining():
         self.loss = CrossEntropyLoss2d()
         self.subject = os.getenv("PPHAR_SUBJECT_ID")
         self.set_device()
-
-        
         self.current_epoch = 0
         self.current_iteration = 0
         self.best_valid_acc = 0
-
-        
         self.writer = SummaryWriter(log_dir="log_dir/experiment" + str(self.args['local_ep']) + "/", comment='moe_dte')
 
         # Loading of local training dataset and preparing data loader object for pytroch
@@ -69,6 +65,7 @@ class LocalTraining():
                 
         self.writer.flush()
         self.writer.close()
+        self.model = self.model.to("cpu")
         return best_parameters, valid_loss, self.best_valid_acc
 
     def train_one_epoch(self):

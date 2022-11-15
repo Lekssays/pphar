@@ -2,11 +2,14 @@ import asyncio
 import copy
 import json
 import torch
+import time
+import random
 import numpy as np
 import io
 import requests
 import os
 import websockets
+import psutil
 
 from collections import OrderedDict
 from datetime import datetime
@@ -127,7 +130,7 @@ def test(global_model):
 
 
 async def send_log(message: str):
-    uri = "ws://172.17.0.1:7777"
+    uri = os.getenv("PPHAR_LOG_SERVER_ENDPOINT")
     dt = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
     message = dt + " - [" + os.getenv("PPHAR_CORE_ID") + "] " + message
     async with websockets.connect(uri) as websocket:
@@ -225,18 +228,24 @@ def encrypt_model(HE, model):
     message = "Encrypting the local model.."
     print(message, flush=True)
     loop.run_until_complete(send_log(message))
+
+    free = psutil.virtual_memory().free/(1024**2)
+    while free < 1024:
+        wait = random.randint(2,8)
+        message = f"Not enough memory :( waiting {wait} seconds for our slot..."
+        print(message, flush=True)
+        loop.run_until_complete(send_log(message))
+        time.sleep(wait)
+        free = psutil.virtual_memory().free/(1024**2)
+
     for k in model.keys():
-        arr_y = np.array(model[k].tolist(), dtype=np.float64)
-        enc_p = HE.encodeFrac(arr_y.flatten())
-        del arr_y
-        enc_t = HE.encryptPtxt(enc_p)
-        del enc_p
-        # if device_id == -1:
-        #     enc_t = HE.encrypt(model[k].numpy().flatten().astype(np.float32))
-        # else:
-        #     enc_t = HE.encrypt(model[k].detach().cpu().numpy().flatten().astype(np.float32))
+        if device_id == -1:
+            enc_t = HE.encrypt(model[k].numpy().flatten().astype(np.float64))
+        else:
+            enc_t = HE.encrypt(model[k].detach().cpu().numpy().flatten().astype(np.float64))
         model[k] = enc_t.to_bytes()
         del enc_t
+
     return model
 
 

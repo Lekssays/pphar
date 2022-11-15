@@ -1,4 +1,5 @@
 import asyncio
+import torch
 
 from flask import Flask, request
 
@@ -18,6 +19,7 @@ def process_models():
         print(message, flush=True)
         loop.run_until_complete(send_log(message))
         _ = process_request(request=request)
+        torch.cuda.empty_cache()
         return "Received a global model."
 
 
@@ -31,8 +33,10 @@ def init():
     if get_config("encrypted"):
         print("encrypted init", flush=True)
         _ = process_encrypted_request(request=request, init=True)
+        torch.cuda.empty_cache()
     else:
         _ = process_request(request=request)
+        torch.cuda.empty_cache()
     return message
 
 
@@ -47,6 +51,7 @@ def process_encrypted_models():
         print(message, flush=True)
         loop.run_until_complete(send_log(message))
         _ = process_encrypted_request(request=request)
+        torch.cuda.empty_cache()
         return message
 
 if __name__ == "__main__":

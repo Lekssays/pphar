@@ -39,6 +39,7 @@ def generate_peers_configs(gpu: bool) -> list:
         config_file = open(base_filename, "r")
         content = config_file.read()
         content = content.replace("core_id", "subject" + str(subject) + ".pphar.io")
+        content = content.replace("external_port", "444" + str(subject))
         _peers.append("subject" + str(subject) + ".pphar.io")
         content = content.replace("subject_id", str(subject))
         config_file.close()
