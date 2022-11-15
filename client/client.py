@@ -55,6 +55,7 @@ def process_request(data):
     loop.run_until_complete(send_log(message))
     w_local = train(global_model)
     send_model(model=w_local)
+    torch.cuda.empty_cache()
     return w_local
 
 
