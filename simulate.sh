@@ -21,6 +21,12 @@ else
   shift
 fi
 
+if [ "${MODE}" == "init" ]; then
+    echo "Initialize the model"
+    curl http://0.0.0.0:8585/init
+    exit 0
+fi
+
 echo "Generating docker-compose.yaml..."
 python3 generator.py -g $MODE
 sleep 5
@@ -28,9 +34,6 @@ sleep 5
 if [ "${LOCAL}" == "1" ]; then
     echo "Starting servers..."
     docker-compose up -d $(<servers.txt)
-    sleep 5
-    echo "Initialize the model"
-    curl http://0.0.0.0:8585/init
 elif [ "${LOCAL}" == "2" ]; then
     echo "Starting subjects..."
     docker-compose up -d $(<peers.txt)
@@ -39,10 +42,6 @@ else
     docker-compose up -d $(<servers.txt)
     sleep 2
     docker-compose up -d $(<peers.txt)
-    echo "Sleeping a little bit zzz..."
-    sleep 5
-    echo "Initialize the model"
-    curl http://0.0.0.0:8585/init
 fi
 
 
