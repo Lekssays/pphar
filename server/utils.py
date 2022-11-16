@@ -9,6 +9,7 @@ import websockets
 import psutil
 import time
 import random
+import gc
 
 from collections import OrderedDict
 from datetime import datetime
@@ -158,6 +159,7 @@ def process_request(request):
     if len(w_locals) and len(w_locals) <= len(get_config(key="subjects")) - 1:
         w_locals.append(model)
         del model
+        gc.collect()
         message = f"Received a local model from {sender}"
         print(message, flush=True)
         loop.run_until_complete(send_log(message))
@@ -176,6 +178,7 @@ def process_request(request):
 
         send_global_model(model=w_global, init=False, encrypted=False)
         del w_global
+        gc.collect()
 
         message = f"Sent aggregated global model to {sender}"
         print(message, flush=True)
@@ -212,6 +215,7 @@ def process_encrypted_request(request):
     if len(w_locals) < len(get_config(key="subjects")) - 1:
         w_locals.append(enc_model)
         del enc_model
+        gc.collect()
         message = f"Received an encrypted local model from {sender}"
         print(message, flush=True)
         loop.run_until_complete(send_log(message))
@@ -225,7 +229,8 @@ def process_encrypted_request(request):
 
         send_global_model(model=enc_w_global, init=False, encrypted=True)
         del enc_w_global
-        
+        gc.collect()
+
         message = f"Sent aggregated global model to {sender}"
         print(message, flush=True)
         loop.run_until_complete(send_log(message))

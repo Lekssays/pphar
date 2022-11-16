@@ -69,6 +69,7 @@ def send_message(address: str, port: int, model: bytes, HE=None):
         }
         res = requests.post(url=url, json=payload, headers={'Content-Type': 'application/json'}, timeout=None)
     del payload
+    gc.collect()
     return res
 
 
@@ -79,6 +80,7 @@ def send_model(model: OrderedDict):
     port = int(os.getenv("PPHAR_SERVER_PORT"))
     send_message(address=address, port=port,model=to_bytes(content=model))
     del model
+    gc.collect()
     message = "Sending the local model to " + address
     print(message, flush=True)
     loop.run_until_complete(send_log(message))
@@ -105,6 +107,7 @@ def train(global_model):
     loop.run_until_complete(send_log(message))
     torch.save(global_model, get_config(key="fed_model_save"))
     del global_model
+    gc.collect()
     return w_local
 
 
@@ -222,6 +225,7 @@ def init():
     model.train()
     torch.save(model.state_dict(), "init.pt")
     del model
+    gc.collect()
 
 
 def encrypt_model(HE, model):
@@ -250,6 +254,7 @@ def encrypt_model(HE, model):
             enc_t = HE.encrypt(model[k].detach().cpu().numpy().flatten().astype(np.float64))
         model[k] = enc_t.to_bytes()
         del enc_t
+        gc.collect()
 
     return model
 
@@ -262,6 +267,7 @@ def send_encrypted_model(HE, model):
     port = int(os.getenv("PPHAR_SERVER_PORT"))
     send_message(address=address, port=port, HE=HE, model=enc_model)
     del enc_model
+    gc.collect()
     message = "Sent the encrypted local model to " + address
     print(message, flush=True)
     loop.run_until_complete(send_log(message))
@@ -307,6 +313,7 @@ def process_encrypted_request(request, init=False):
     global_model = SingleLSTMEncoder(n_channels, n_hidden_layers, n_layers, n_classes, drop_prob)
     global_model.load_state_dict(w_global)
     del w_global
+    gc.collect()
     message = "Training with the new global model"
     print(message, flush=True)
     loop.run_until_complete(send_log(message))
@@ -332,6 +339,7 @@ def process_request(request):
     global_model = SingleLSTMEncoder(n_channels, n_hidden_layers, n_layers, n_classes, drop_prob)
     global_model.load_state_dict(w_global)
     del w_global
+    gc.collect()
     message = "Training with the new global model"
     print(message, flush=True)
     loop.run_until_complete(send_log(message))
