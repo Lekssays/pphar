@@ -1,5 +1,21 @@
 #!/bin/bash
 
+if [[ $# -lt 1 ]] ; then
+  printHelp
+  exit 0
+else
+  MODE=$1
+  LOCAL=$2
+  shift
+fi
+
+
+if [ "${MODE}" == "init" ]; then
+    echo "Initialize the model"
+    curl http://0.0.0.0:8585/init
+    exit 0
+fi
+
 echo "Cleaning the mess.."$
 docker stop $(docker ps -a -q  --filter ancestor=lekssays/pphar-client:gpu)
 
@@ -10,22 +26,6 @@ docker stop $(docker ps -a -q  --filter ancestor=lekssays/pphar-client:cpu)
 docker rm $(docker ps -a -q  --filter ancestor=lekssays/pphar-client:cpu)
 
 rm ./client/init.pt
-
-
-if [[ $# -lt 1 ]] ; then
-  printHelp
-  exit 0
-else
-  MODE=$1
-  LOCAL=$2
-  shift
-fi
-
-if [ "${MODE}" == "init" ]; then
-    echo "Initialize the model"
-    curl http://0.0.0.0:8585/init
-    exit 0
-fi
 
 echo "Generating docker-compose.yaml..."
 python3 generator.py -g $MODE
