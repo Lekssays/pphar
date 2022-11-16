@@ -65,7 +65,6 @@ class LocalTraining():
                 
         self.writer.flush()
         self.writer.close()
-        self.model = self.model.to("cpu")
         return best_parameters, valid_loss, self.best_valid_acc
 
     def train_one_epoch(self):

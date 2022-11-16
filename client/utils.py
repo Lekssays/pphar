@@ -68,6 +68,7 @@ def send_message(address: str, port: int, model: bytes, HE=None):
             'data': to_bytes(content=model).decode('cp437'),
         }
         res = requests.post(url=url, json=payload, headers={'Content-Type': 'application/json'}, timeout=None)
+    del payload
     return res
 
 
@@ -77,6 +78,7 @@ def send_model(model: OrderedDict):
     address = os.getenv("PPHAR_SERVER_HOST")
     port = int(os.getenv("PPHAR_SERVER_PORT"))
     send_message(address=address, port=port,model=to_bytes(content=model))
+    del model
     message = "Sending the local model to " + address
     print(message, flush=True)
     loop.run_until_complete(send_log(message))
@@ -87,12 +89,10 @@ def train(global_model):
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     loss_train = []
-    w_local = None
     loss_locals = []
     local_valid_acc = []
     local = LocalTraining()
-    w, loss, valid_acc = local.train(model=copy.deepcopy(global_model).to(device))
-    w_local = w
+    w_local, loss, valid_acc = local.train(model=copy.deepcopy(global_model).to(device))
     loss_locals.append(copy.deepcopy(loss))
     local_valid_acc.append(valid_acc)
     loss_avg = sum(loss_locals) / len(loss_locals)
@@ -104,6 +104,7 @@ def train(global_model):
     message = '@{},{:.3f},{:.3f}'.format(os.getenv("PPHAR_SUBJECT_ID"), loss_avg, accuracy_avg)
     loop.run_until_complete(send_log(message))
     torch.save(global_model, get_config(key="fed_model_save"))
+    del global_model
     return w_local
 
 
@@ -220,6 +221,7 @@ def init():
     model.to(device)
     model.train()
     torch.save(model.state_dict(), "init.pt")
+    del model
 
 
 def encrypt_model(HE, model):
@@ -230,6 +232,9 @@ def encrypt_model(HE, model):
     loop.run_until_complete(send_log(message))
 
     free = psutil.virtual_memory().free/(1024**2)
+    message = f"The free memory is {free} Megabytes"
+    print(message, flush=True)
+    loop.run_until_complete(send_log(message))
     while free < 1024:
         wait = random.randint(2,8)
         message = f"Not enough memory :( waiting {wait} seconds for our slot..."
@@ -256,6 +261,7 @@ def send_encrypted_model(HE, model):
     address = os.getenv("PPHAR_SERVER_HOST")
     port = int(os.getenv("PPHAR_SERVER_PORT"))
     send_message(address=address, port=port, HE=HE, model=enc_model)
+    del enc_model
     message = "Sent the encrypted local model to " + address
     print(message, flush=True)
     loop.run_until_complete(send_log(message))
@@ -300,6 +306,7 @@ def process_encrypted_request(request, init=False):
     drop_prob = get_config(key="drop_prob")
     global_model = SingleLSTMEncoder(n_channels, n_hidden_layers, n_layers, n_classes, drop_prob)
     global_model.load_state_dict(w_global)
+    del w_global
     message = "Training with the new global model"
     print(message, flush=True)
     loop.run_until_complete(send_log(message))
@@ -324,6 +331,7 @@ def process_request(request):
     drop_prob = get_config(key="drop_prob")
     global_model = SingleLSTMEncoder(n_channels, n_hidden_layers, n_layers, n_classes, drop_prob)
     global_model.load_state_dict(w_global)
+    del w_global
     message = "Training with the new global model"
     print(message, flush=True)
     loop.run_until_complete(send_log(message))
