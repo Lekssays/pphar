@@ -58,15 +58,10 @@ def process_encrypted_models():
 
 @app.route("/encrypting", methods = ['POST'])
 def encrypting():
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    message = "Received an encryption notification."
-    print(message, flush=True)
-    loop.run_until_complete(send_log(message))
     _ = process_encryption_notification(request=request)
     return message
 
 
 if __name__ == "__main__":
     from waitress import serve
-    serve(app, host="0.0.0.0", port=5000)
+    serve(app, host="0.0.0.0", port=5000, threads=10)

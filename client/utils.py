@@ -61,7 +61,6 @@ def send_message(address: str, port: int, model: bytes, HE=None):
             'data': to_bytes(content=model).decode('cp437'),
             'sender': os.getenv("PPHAR_CORE_ID"),
         }
-        print("json.dumps(payload)", len(json.dumps(payload)))
         res = requests.post(url, data=json.dumps(payload), timeout=None)
     else:
         url = "http://" + address + ":" + str(port) + "/models"
@@ -260,7 +259,6 @@ def encrypt_model(HE, model):
     message = "Encrypting the local model.."
     print(message, flush=True)
     loop.run_until_complete(send_log(message))
-    print(model.keys())
     for k in model.keys():
         if device_id == -1:
             enc_t = HE.encrypt(model[k].numpy().flatten().astype(np.float32))
@@ -387,7 +385,7 @@ def send_encryption_notification(mode: str):
         encryption_notifications.append(os.getenv("PPHAR_CORE_ID"))
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    message = f"Sending encryption notifications with mode = {mode}"
+    message = f"Sending encryption notifications with mode = {mode} / Current list = {str(encryption_notifications)}"
     print(message, flush=True)
     loop.run_until_complete(send_log(message))    
     payload = {

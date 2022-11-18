@@ -91,12 +91,12 @@ def send_global_model(model, init=False, encrypted=False):
             address = os.getenv("PPHAR_REMOTE_TRAINING_SERVER")
             port = int("444" + str(s))
         if encrypted:
-            message = "Sending the encrypted global model to " + address + " / " + str(rounds)
+            message = "Sending the encrypted global model to " + address + ":" + str(port) +" / " + str(rounds)
         else:   
             if init and rounds == 0:
-                message = "Sending the initial global model to " + address + " / " + str(rounds)
+                message = "Sending the initial global model to " + address + ":" + str(port) +" / " + str(rounds)
             else:
-                message = "Sending the global model to " + address + " / " + str(rounds)
+                message = "Sending the global model to " + address + ":" + str(port) +" / " + str(rounds)
         print(message, flush=True)
         loop.run_until_complete(send_log(message))   
         p = Process(target=send_message, args=(address, port, data, init, encrypted, ))
@@ -180,7 +180,7 @@ def process_request(request):
         del w_global
         gc.collect()
 
-        message = f"Sent aggregated global model to {sender}"
+        message = f"Sent aggregated global model to all clients."
         print(message, flush=True)
         loop.run_until_complete(send_log(message))
         return message
