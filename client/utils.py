@@ -329,7 +329,7 @@ def process_encrypted_request(request, init=False):
     del w_local
     gc.collect()
     send_encryption_notification(mode="FREE")
-
+    encryption_notifications.clear()
 
 
 def process_request(request):
@@ -368,10 +368,12 @@ def process_encryption_notification(request):
     message = ""
     if mode == "FREE":
         message = f"Removed {sender} from encryption notifications"
-        encryption_notifications.remove(sender)
+        if sender in encryption_notifications:
+            encryption_notifications.remove(sender)
     elif mode == "RESERVE":
         message = f"Added {sender} from encryption notifications"
-        encryption_notifications.append(sender)
+        if sender not in encryption_notifications
+            encryption_notifications.append(sender)
     print(message, flush=True)
     loop.run_until_complete(send_log(message))
 
