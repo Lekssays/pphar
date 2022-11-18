@@ -19,7 +19,7 @@ def process_models():
         message = "Received a global model."
         print(message, flush=True)
         loop.run_until_complete(send_log(message))
-        _ = process_request(request=request)
+        process_request(request=request)
         torch.cuda.empty_cache()
         return "Received a global model."
 
@@ -36,7 +36,7 @@ def init():
         _ = process_encrypted_request(request=request, init=True)
         torch.cuda.empty_cache()
     else:
-        _ = process_request(request=request)
+        process_request(request=request)
         torch.cuda.empty_cache()
     return message
 
@@ -51,14 +51,14 @@ def process_encrypted_models():
         message = "Received an encrypted global model."
         print(message, flush=True)
         loop.run_until_complete(send_log(message))
-        _ = process_encrypted_request(request=request)
+        process_encrypted_request(request=request)
         torch.cuda.empty_cache()
         return message
 
 
 @app.route("/encrypting", methods = ['POST'])
 def encrypting():
-    _ = process_encryption_notification(request=request)
+    process_encryption_notification(request=request)
     return "Received"
 
 

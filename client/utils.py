@@ -249,13 +249,9 @@ def encrypt_model(HE, model):
         print(message, flush=True)
         loop.run_until_complete(send_log(message))
         time.sleep(wait)
-
-    while True:
-        if len(encryption_notifications) < 2:
-            send_encryption_notification(mode="RESERVE")
-            break
-        time.sleep(3)
     
+    send_encryption_notification(mode="RESERVE")
+
     message = "Encrypting the local model.."
     print(message, flush=True)
     loop.run_until_complete(send_log(message))
@@ -330,8 +326,10 @@ def process_encrypted_request(request, init=False):
     loop.run_until_complete(send_log(message))
     w_local = train(global_model)
     send_encrypted_model(model=w_local, HE=HE)
+    del w_local
+    gc.collect()
     send_encryption_notification(mode="FREE")
-    return w_local
+
 
 
 def process_request(request):
@@ -357,7 +355,8 @@ def process_request(request):
     loop.run_until_complete(send_log(message))
     w_local = train(global_model)
     send_model(model=w_local)
-    return w_local
+    del w_local
+    gc.collect()
 
 
 def process_encryption_notification(request):
@@ -375,16 +374,25 @@ def process_encryption_notification(request):
         encryption_notifications.append(sender)
     print(message, flush=True)
     loop.run_until_complete(send_log(message))
-    return message
 
 
 def send_encryption_notification(mode: str):
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+
     if mode == "FREE":
         encryption_notifications.remove(os.getenv("PPHAR_CORE_ID"))
     elif mode == "RESERVE":
         encryption_notifications.append(os.getenv("PPHAR_CORE_ID"))
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
+
+    while True:
+        if len(encryption_notifications) < 3:
+            break
+        message = f"Waiting 3 seconds for the list to be freed / Current list = {str(encryption_notifications)}"
+        print(message, flush=True)
+        loop.run_until_complete(send_log(message))
+        time.sleep(3)
+
     message = f"Sending encryption notifications with mode = {mode} / Current list = {str(encryption_notifications)}"
     print(message, flush=True)
     loop.run_until_complete(send_log(message))    

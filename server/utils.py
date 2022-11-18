@@ -100,7 +100,9 @@ def send_global_model(model, init=False, encrypted=False):
                 message = "Sending the global model to " + address + ":" + str(port) +" / " + str(rounds)
         print(message, flush=True)
         loop.run_until_complete(send_log(message))
-        send_message(address, port, data, init, encrypted)
+        p = Process(target=send_message, args=(address, port, data, init, encrypted, ))
+        p.start()
+        time.sleep(random.randint(0, 5))
     rounds += 1
 
 
