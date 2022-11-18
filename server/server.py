@@ -2,6 +2,7 @@ from flask import Flask, request
 from utils import *
 
 app = Flask(__name__)
+app.config['MAX_CONTENT_LENGTH'] = 2048 * 1024 * 1024
 
 @app.route("/models", methods = ['GET', 'POST'])
 def process_models():
@@ -29,4 +30,5 @@ def init():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    from waitress import serve
+    serve(app, host="0.0.0.0", port=5000)

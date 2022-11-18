@@ -10,6 +10,7 @@ import requests
 import os
 import websockets
 import psutil
+import gc
 
 from collections import OrderedDict
 from datetime import datetime
@@ -28,6 +29,7 @@ if(train_on_gpu):
     device_id = get_device_id(torch.cuda.is_available())
 device = torch.device(f"cuda:{device_id}" if device_id >= 0 else "cpu")
 
+encryption_notifications = []
 
 def get_config(key: str):
     with open("config.json", "r") as f:
@@ -60,7 +62,7 @@ def send_message(address: str, port: int, model: bytes, HE=None):
             'sender': os.getenv("PPHAR_CORE_ID"),
         }
         print("json.dumps(payload)", len(json.dumps(payload)))
-        res = requests.post(url, data=json.dumps(payload))
+        res = requests.post(url, data=json.dumps(payload), timeout=None)
     else:
         url = "http://" + address + ":" + str(port) + "/models"
         payload = {
@@ -137,8 +139,12 @@ async def send_log(message: str):
     uri = os.getenv("PPHAR_LOG_SERVER_ENDPOINT")
     dt = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
     message = dt + " - [" + os.getenv("PPHAR_CORE_ID") + "] " + message
-    async with websockets.connect(uri) as websocket:
-        await websocket.send(message)
+    try:
+        async with websockets.connect(uri) as websocket:
+            await websocket.send(message)
+    except Exception as e:
+        print(str(e))
+        pass
 
 
 def write(filename, content):
@@ -231,31 +237,38 @@ def init():
 def encrypt_model(HE, model):
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    message = "Encrypting the local model.."
-    print(message, flush=True)
-    loop.run_until_complete(send_log(message))
 
-    free = psutil.virtual_memory().free/(1024**2)
-    message = f"The free memory is {free} Megabytes"
-    print(message, flush=True)
-    loop.run_until_complete(send_log(message))
-    while free < 1024:
+    while True:
+        free = psutil.virtual_memory().free/(1024**2)
+        message = f"The free memory is {free} Megabytes"
+        print(message, flush=True)
+        loop.run_until_complete(send_log(message))
+        if free > 4096:
+            break
         wait = random.randint(2,8)
         message = f"Not enough memory :( waiting {wait} seconds for our slot..."
         print(message, flush=True)
         loop.run_until_complete(send_log(message))
         time.sleep(wait)
-        free = psutil.virtual_memory().free/(1024**2)
 
+    while True:
+        if len(encryption_notifications) < 2:
+            break
+        time.sleep(3)
+
+    send_encryption_notification(mode="RESERVE")
+    message = "Encrypting the local model.."
+    print(message, flush=True)
+    loop.run_until_complete(send_log(message))
+    print(model.keys())
     for k in model.keys():
         if device_id == -1:
-            enc_t = HE.encrypt(model[k].numpy().flatten().astype(np.float64))
+            enc_t = HE.encrypt(model[k].numpy().flatten().astype(np.float32))
         else:
-            enc_t = HE.encrypt(model[k].detach().cpu().numpy().flatten().astype(np.float64))
+            enc_t = HE.encrypt(model[k].detach().cpu().numpy().flatten().astype(np.float32))
         model[k] = enc_t.to_bytes()
         del enc_t
         gc.collect()
-
     return model
 
 
@@ -319,6 +332,7 @@ def process_encrypted_request(request, init=False):
     loop.run_until_complete(send_log(message))
     w_local = train(global_model)
     send_encrypted_model(model=w_local, HE=HE)
+    send_encryption_notification(mode="FREE")
     return w_local
 
 
@@ -346,3 +360,42 @@ def process_request(request):
     w_local = train(global_model)
     send_model(model=w_local)
     return w_local
+
+
+def process_encryption_notification(request):
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    request = json.loads(request.get_data())
+    sender = request["sender"]
+    mode = request["mode"]
+    message = ""
+    if mode == "FREE":
+        message = f"Removed {sender} from encryption notifications"
+        encryption_notifications.remove(sender)
+    elif mode == "RESERVE":
+        message = f"Added {sender} from encryption notifications"
+        encryption_notifications.append(sender)
+    print(message, flush=True)
+    loop.run_until_complete(send_log(message))
+    return message
+
+
+def send_encryption_notification(mode: str):
+    if mode == "FREE":
+        encryption_notifications.remove(os.getenv("PPHAR_CORE_ID"))
+    elif mode == "RESERVE":
+        encryption_notifications.append(os.getenv("PPHAR_CORE_ID"))
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    message = f"Sending encryption notifications with mode = {mode}"
+    print(message, flush=True)
+    loop.run_until_complete(send_log(message))    
+    payload = {
+        'mode': mode,
+        'sender': os.getenv("PPHAR_CORE_ID"),
+    }
+    subjects = get_config("subjects")
+    for s in subjects:
+        address = "subject" + str(s) + ".pphar.io"
+        url = "http://" + address + ":5000" + "/encrypting"
+        requests.post(url, data=json.dumps(payload), timeout=None)
