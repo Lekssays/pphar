@@ -101,7 +101,6 @@ def send_global_model(model, init=False, encrypted=False):
         loop.run_until_complete(send_log(message))   
         p = Process(target=send_message, args=(address, port, data, init, encrypted, ))
         p.start()
-    rounds += 1
     return rounds
 
 
@@ -175,6 +174,7 @@ def process_request(request):
         print(message, flush=True)
         loop.run_until_complete(send_log(message))
         torch.save(w_global, "w_global.pt")
+        rounds += 1
 
         send_global_model(model=w_global, init=False, encrypted=False)
         del w_global

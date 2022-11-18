@@ -59,7 +59,7 @@ def process_encrypted_models():
 @app.route("/encrypting", methods = ['POST'])
 def encrypting():
     _ = process_encryption_notification(request=request)
-    return message
+    return "Received"
 
 
 if __name__ == "__main__":

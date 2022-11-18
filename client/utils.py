@@ -252,10 +252,10 @@ def encrypt_model(HE, model):
 
     while True:
         if len(encryption_notifications) < 2:
+            send_encryption_notification(mode="RESERVE")
             break
         time.sleep(3)
-
-    send_encryption_notification(mode="RESERVE")
+    
     message = "Encrypting the local model.."
     print(message, flush=True)
     loop.run_until_complete(send_log(message))
