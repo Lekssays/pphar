@@ -63,6 +63,7 @@ def from_bytes(content: bytes) -> torch.Tensor:
 
 
 def send_message(address: str, port: int, data: bytes, init: bool, encrypted: bool):
+    global rounds
     if init and rounds == 0:
         url = "http://" + address + ":" + str(port) + "/init"
     else:
@@ -98,10 +99,9 @@ def send_global_model(model, init=False, encrypted=False):
             else:
                 message = "Sending the global model to " + address + ":" + str(port) +" / " + str(rounds)
         print(message, flush=True)
-        loop.run_until_complete(send_log(message))   
-        p = Process(target=send_message, args=(address, port, data, init, encrypted, ))
-        p.start()
-    return rounds
+        loop.run_until_complete(send_log(message))
+        send_message(address, port, data, init, encrypted)
+    rounds += 1
 
 
 async def send_log(message: str):
@@ -174,7 +174,6 @@ def process_request(request):
         print(message, flush=True)
         loop.run_until_complete(send_log(message))
         torch.save(w_global, "w_global.pt")
-        rounds += 1
 
         send_global_model(model=w_global, init=False, encrypted=False)
         del w_global
