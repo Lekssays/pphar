@@ -372,7 +372,7 @@ def process_encryption_notification(request):
             encryption_notifications.remove(sender)
     elif mode == "RESERVE":
         message = f"Added {sender} from encryption notifications"
-        if sender not in encryption_notifications
+        if sender not in encryption_notifications:
             encryption_notifications.append(sender)
     print(message, flush=True)
     loop.run_until_complete(send_log(message))
