@@ -91,7 +91,10 @@ class LocalTraining():
             is_best = valid_acc >= self.best_valid_acc
             if is_best:
                 self.best_valid_acc = valid_acc
-                best_parameters = self.model.state_dict()
+                if self.dpsgd_flag:
+                    best_parameters = self.model._module.state_dict()
+                else:
+                    best_parameters = self.model.state_dict()
                 
         self.writer.flush()
         self.writer.close()
