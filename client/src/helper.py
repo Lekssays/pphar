@@ -7,9 +7,13 @@ import numpy as np
 import random
 from time import sleep
 import os
+<<<<<<< HEAD
 
 
 dont_touch_gpu_ids = []
+=======
+dont_touch_gpu_ids = [1]
+>>>>>>> Fixed opacus layers
 memory_max = 2300
 
 class Logger:
@@ -62,7 +66,7 @@ def get_device_id(cuda_is_available):
     mem_dict = {}
     mem_list = []
     if int(subject_id) in range(1,10):
-
+        
         assigned_gpu = random.choice([0,1])
         available_mem_on_assigned_gpu = stats[assigned_gpu, 1]
         mem_dict = {available_mem_on_assigned_gpu:assigned_gpu,available_mem_on_gpu:gpu_index,memory_max:-1}
@@ -74,12 +78,14 @@ def get_device_id(cuda_is_available):
         #     device_id = gpu_index
         # else:
         #      device_id=-1
+        if int(subject_id) == 2 or int(subject_id) == 9:
+            device_id = 2
     elif int(subject_id) in range(10,20):
         assigned_gpu = random.choice([0,3])
         available_mem_on_assigned_gpu = stats[assigned_gpu, 1]
         mem_dict = {available_mem_on_assigned_gpu:assigned_gpu,available_mem_on_gpu:gpu_index,memory_max:-1}
         mem_list = [available_mem_on_assigned_gpu,available_mem_on_gpu,memory_max]
-        device_id = 1#mem_dict.get(max(mem_list))
+        device_id = 2#mem_dict.get(max(mem_list))
         # if available_mem_on_assigned_gpu >= available_mem_on_gpu >= memory_max:
         #     device_id = assigned_gpu
         # elif available_mem_on_gpu >= available_mem_on_assigned_gpu >= memory_max:
