@@ -42,20 +42,20 @@ def process_request(data):
     drop_prob = get_config(key="drop_prob")
     subject = os.getenv("PPHAR_SUBJECT_ID")
     if int(subject) in get_config(key="dp_sgd_clients"):
-        global_model = DPLSTMEncoder(n_channels, n_hidden_layers, n_layers, n_classes, drop_prob)
+        global_model = DPLSTMEncoder(n_channels, n_hidden_layers, n_layers, n_classes, drop_prob)   
         for keys in w_global.keys():
             if keys not in drop_keys:
                 global_model.state_dict()[keys] = w_global[keys]
     else:
         global_model = SingleLSTMEncoder(n_channels, n_hidden_layers, n_layers, n_classes, drop_prob)
         global_model.load_state_dict(w_global)
-        
+    
     message = "Training with the new global model"
     print(message)
     loop.run_until_complete(send_log(message))
     w_local = train(global_model)
     send_model(model=w_local)
-    torch.cuda.empty_cache()
+    torch.cuda.empty_cache()    
     return w_local
 
 
