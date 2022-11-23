@@ -29,6 +29,15 @@ def init():
     return "initialized the model\n"
 
 
+@app.route("/failed", methods = ['GET', 'POST'])
+def process_encrypted_models():
+    if request.method == 'GET':
+        return "<p>Hello, World!</p>"
+    if request.method == 'POST':
+        response = process_failed_request(request=request)
+        return response
+
+
 if __name__ == "__main__":
     from waitress import serve
     serve(app, host="0.0.0.0", port=5000, threads=10)

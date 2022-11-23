@@ -244,7 +244,7 @@ def encrypt_model(HE, model):
         loop.run_until_complete(send_log(message))
         if free > 2048:
             break
-        wait = random.randint(3,3)
+        wait = random.randint(3,5)
         message = f"Not enough memory :( waiting {wait} seconds for our slot..."
         print(message, flush=True)
         loop.run_until_complete(send_log(message))

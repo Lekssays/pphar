@@ -78,11 +78,12 @@ def send_message(address: str, port: int, data: bytes, init: bool, encrypted: bo
     return requests.post(url=url, data=json.dumps(payload), timeout=None)
 
 
-def send_global_model(model, init=False, encrypted=False):
+def send_global_model(model, init=False, encrypted=False, failed=False, subjects=[]):
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     global rounds
-    subjects = get_config(key="subjects")
+    if not failed: 
+        subjects = get_config(key="subjects")
     data = to_bytes(content=model)
     for s in subjects:
         if get_config("local"):
@@ -186,6 +187,7 @@ def process_request(request):
         loop.run_until_complete(send_log(message))
         return message
 
+
 def process_encrypted_request(request):
     global w_locals
     loop = asyncio.new_event_loop()
@@ -224,7 +226,7 @@ def process_encrypted_request(request):
     else:
         message = f"Aggregating encrypted local models from {sender}"
         print(message, flush=True)
-        loop.run_until_complete(send_log(message))   
+        loop.run_until_complete(send_log(message))
         enc_w_global = EncFedAvg(HE=HE, enc_w=w_locals)
         w_locals.clear()
 
@@ -236,3 +238,39 @@ def process_encrypted_request(request):
         print(message, flush=True)
         loop.run_until_complete(send_log(message))
         return message
+
+
+def get_container_id(name: str):
+    cid = ""
+    for c in name:
+        if c.isdigit():
+            cid += c
+    return int(cid)
+
+
+def process_failed_request(request):
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+
+    exited_containers = request.json.get('containers')
+    exited_containers = exited_containers.split(",")
+
+    n_channels = get_config(key="n_channels")
+    n_hidden_layers = get_config(key="n_hidden_layers")
+    n_layers = get_config(key="n_layers")
+    n_classes = get_config(key="n_classes")
+    drop_prob = get_config(key="drop_prob")
+    w_global = SingleLSTMEncoder(n_channels, n_hidden_layers, n_layers, n_classes, drop_prob)
+    w_global.load_state_dict(torch.load("w_global.pt"))
+
+    cids = []
+    for container in exited_containers:
+        if ".pphar.io" in container:
+            cids.append(get_container_id(container))
+
+    message = f"Sending the global model to the exited containers..."
+    print(message, flush=True)
+    loop.run_until_complete(send_log(message))
+    send_global_model(model=w_global, encrypted=get_config("encrypted"), failed=True, subjects=cids)
+
+    return message
