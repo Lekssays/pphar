@@ -30,7 +30,7 @@ def init():
 
 
 @app.route("/failed", methods = ['GET', 'POST'])
-def process_encrypted_models():
+def process_failed_containers():
     if request.method == 'GET':
         return "<p>Hello, World!</p>"
     if request.method == 'POST':
