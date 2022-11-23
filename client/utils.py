@@ -242,9 +242,9 @@ def encrypt_model(HE, model):
         message = f"The free memory is {free} Megabytes"
         print(message, flush=True)
         loop.run_until_complete(send_log(message))
-        if free > 4096:
+        if free > 2048:
             break
-        wait = random.randint(2,8)
+        wait = random.randint(3,3)
         message = f"Not enough memory :( waiting {wait} seconds for our slot..."
         print(message, flush=True)
         loop.run_until_complete(send_log(message))
@@ -325,6 +325,8 @@ def process_encrypted_request(request, init=False):
     print(message, flush=True)
     loop.run_until_complete(send_log(message))
     w_local = train(global_model)
+    del global_model
+    gc.collect()
     send_encrypted_model(model=w_local, HE=HE)
     del w_local
     gc.collect()
@@ -354,6 +356,8 @@ def process_request(request):
     print(message, flush=True)
     loop.run_until_complete(send_log(message))
     w_local = train(global_model)
+    del global_model
+    gc.collect()
     send_model(model=w_local)
     del w_local
     gc.collect()
@@ -371,9 +375,16 @@ def process_encryption_notification(request):
         if sender in encryption_notifications:
             encryption_notifications.remove(sender)
     elif mode == "RESERVE":
-        message = f"Added {sender} from encryption notifications"
         if sender not in encryption_notifications:
-            encryption_notifications.append(sender)
+            while True:
+                if len(encryption_notifications) < 3:
+                    encryption_notifications.append(sender)
+                    break
+                message = f"Waiting 2 seconds for the list to be freed / Current list = {str(encryption_notifications)}"
+                print(message, flush=True)
+                loop.run_until_complete(send_log(message))
+                time.sleep(2)    
+        message = f"Added {sender} from encryption notifications" 
     print(message, flush=True)
     loop.run_until_complete(send_log(message))
 
@@ -385,8 +396,10 @@ def send_encryption_notification(mode: str):
     if mode == "FREE":
         encryption_notifications.remove(os.getenv("PPHAR_CORE_ID"))
     elif mode == "RESERVE":
-        encryption_notifications.append(os.getenv("PPHAR_CORE_ID"))
+        if os.getenv("PPHAR_CORE_ID") not in encryption_notifications:
+            encryption_notifications.append(os.getenv("PPHAR_CORE_ID"))
 
+    count = 0
     while True:
         if len(encryption_notifications) < 3:
             break
@@ -394,6 +407,13 @@ def send_encryption_notification(mode: str):
         print(message, flush=True)
         loop.run_until_complete(send_log(message))
         time.sleep(3)
+        if count > 5:
+            if os.getenv("PPHAR_CORE_ID") in encryption_notifications:
+                encryption_notifications.remove(os.getenv("PPHAR_CORE_ID"))
+        if count > 10:
+            encryption_notifications.clear()
+            count = 0
+        count += 1
 
     message = f"Sending encryption notifications with mode = {mode} / Current list = {str(encryption_notifications)}"
     print(message, flush=True)
