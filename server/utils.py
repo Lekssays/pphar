@@ -62,8 +62,10 @@ def from_bytes(content: bytes) -> torch.Tensor:
     return loaded_content
 
 
-def send_message(address: str, port: int, data: bytes, init: bool, encrypted: bool):
+def send_message(address: str, port: int, data: bytes, init: bool, encrypted: bool, resumed: bool):
     global rounds
+    if resumed:
+        rounds = load_rounds()
     if init and rounds == 0:
         url = "http://" + address + ":" + str(port) + "/init"
     else:
@@ -79,12 +81,18 @@ def send_message(address: str, port: int, data: bytes, init: bool, encrypted: bo
     return requests.post(url=url, data=json.dumps(payload), timeout=None)
 
 
-def send_global_model(model, init=False, encrypted=False, failed=False, subjects=[]):
+def send_global_model(model, init=False, encrypted=False, failed=False, subjects=[], resumed=False):
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
+    
     global rounds
+    if resumed:
+        rounds = load_rounds()
+
     if not failed: 
         subjects = get_config(key="subjects")
+    
+
     data = to_bytes(content=model)
     for s in subjects:
         if get_config("local"):
@@ -102,7 +110,7 @@ def send_global_model(model, init=False, encrypted=False, failed=False, subjects
                 message = "Sending the global model to " + address + ":" + str(port) +" / " + str(rounds)
         print(message, flush=True)
         loop.run_until_complete(send_log(message))
-        p = Process(target=send_message, args=(address, port, data, init, encrypted, ))
+        p = Process(target=send_message, args=(address, port, data, init, encrypted, resumed, ))
         p.start()
         time.sleep(random.randint(0, 5))
     rounds += 1
@@ -119,6 +127,21 @@ async def send_log(message: str):
 def get_rounds():
     global rounds
     return rounds
+
+
+def save_rounds():
+    global rounds
+    data = {
+        "rounds": rounds,
+    }
+    with open('rounds.json', 'w') as f:
+        json.dump(data, f)
+
+
+def load_rounds():
+    with open("rounds.json", "r") as f:
+        data = json.load(f)
+    return data["rounds"]
 
 
 def EncFedAvg(HE, enc_w):
@@ -178,6 +201,7 @@ def process_request(request):
         print(message, flush=True)
         loop.run_until_complete(send_log(message))
         torch.save(w_global, "w_global.pt")
+        save_rounds()
 
         send_global_model(model=w_global, init=False, encrypted=False)
         del w_global
@@ -231,6 +255,12 @@ def process_encrypted_request(request):
         enc_w_global = EncFedAvg(HE=HE, enc_w=w_locals)
         w_locals.clear()
 
+        message = "Saving the encypted aggregated global model locally."
+        print(message, flush=True)
+        loop.run_until_complete(send_log(message))
+        torch.save(enc_w_global, "enc_w_global.pt")
+        save_rounds()
+
         send_global_model(model=enc_w_global, init=False, encrypted=True)
         del enc_w_global
         gc.collect()
@@ -256,13 +286,11 @@ def process_failed_request(request):
     exited_containers = request.json.get('containers')
     exited_containers = exited_containers.split(",")
 
-    n_channels = get_config(key="n_channels")
-    n_hidden_layers = get_config(key="n_hidden_layers")
-    n_layers = get_config(key="n_layers")
-    n_classes = get_config(key="n_classes")
-    drop_prob = get_config(key="drop_prob")
-    w_global = SingleLSTMEncoder(n_channels, n_hidden_layers, n_layers, n_classes, drop_prob)
-    w_global.load_state_dict(torch.load("w_global.pt"))
+    w_global = None
+    if get_config("encrypted"):
+        w_global = torch.load("enc_w_global.pt")
+    else:
+        w_global = torch.load("w_global.pt")
 
     cids = []
     for container in exited_containers:
@@ -284,17 +312,16 @@ def process_resume_request(request):
     message = f"Loading the global model..."
     print(message, flush=True)
     loop.run_until_complete(send_log(message))
-    n_channels = get_config(key="n_channels")
-    n_hidden_layers = get_config(key="n_hidden_layers")
-    n_layers = get_config(key="n_layers")
-    n_classes = get_config(key="n_classes")
-    drop_prob = get_config(key="drop_prob")
-    w_global = SingleLSTMEncoder(n_channels, n_hidden_layers, n_layers, n_classes, drop_prob)
-    w_global.load_state_dict(torch.load("w_global.pt"))
+
+    w_global = None
+    if get_config("encrypted"):
+        w_global = torch.load("enc_w_global.pt")
+    else:
+        w_global = torch.load("w_global.pt")
 
     message = f"Sending the global model..."
     print(message, flush=True)
     loop.run_until_complete(send_log(message))
-    send_global_model(model=w_global, encrypted=get_config("encrypted"))
+    send_global_model(model=w_global, encrypted=get_config("encrypted"), resumed=True)
 
     return message
