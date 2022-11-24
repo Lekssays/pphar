@@ -38,13 +38,10 @@ def process_failed_containers():
         return response
 
 
-@app.route("/resume", methods = ['GET', 'POST'])
+@app.route("/resume", methods = ['GET'])
 def process_resume_containers():
-    if request.method == 'GET':
-        return "<p>Hello, World!</p>"
-    if request.method == 'POST':
-        response = process_resume_request(request=request)
-        return response
+    response = process_resume_request(request=request)
+    return response
 
 
 if __name__ == "__main__":
