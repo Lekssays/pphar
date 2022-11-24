@@ -38,6 +38,15 @@ def process_failed_containers():
         return response
 
 
+@app.route("/resume", methods = ['GET', 'POST'])
+def process_resume_containers():
+    if request.method == 'GET':
+        return "<p>Hello, World!</p>"
+    if request.method == 'POST':
+        response = process_resume_request(request=request)
+        return response
+
+
 if __name__ == "__main__":
     from waitress import serve
     serve(app, host="0.0.0.0", port=5000, threads=10)

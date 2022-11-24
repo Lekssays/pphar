@@ -2,7 +2,7 @@ import subprocess
 import requests
 import json
 import time
-
+import os
 
 def report(exited_containers: list):
     containers = ",".join(exited_containers)

@@ -88,7 +88,7 @@ def send_model(model: OrderedDict):
     return "Sent the local model"
 
 
-def train(global_model):
+def train(global_model, rounds):
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     loss_train = []
@@ -104,7 +104,7 @@ def train(global_model):
     message = 'Average loss = {:.3f} | Average accuracy = {:.3f}'.format(loss_avg, accuracy_avg)
     print(message, flush=True)
     loop.run_until_complete(send_log(message))
-    message = '@{},{:.3f},{:.3f}'.format(os.getenv("PPHAR_SUBJECT_ID"), loss_avg, accuracy_avg)
+    message = '@{},{},{:.3f},{:.3f}'.format(rounds, os.getenv("PPHAR_SUBJECT_ID"), loss_avg, accuracy_avg)
     loop.run_until_complete(send_log(message))
     torch.save(global_model, get_config(key="fed_model_save"))
     del global_model
@@ -302,6 +302,7 @@ def process_encrypted_request(request, init=False):
         HE = load()
 
     request = json.loads(request.get_data())
+    rounds = str(request["rounds"])
     w_global = from_bytes(request["data"].encode('cp437'))
     if type(w_global) != OrderedDict:
         message = "The received global model is not an OrderedDict."
@@ -324,7 +325,7 @@ def process_encrypted_request(request, init=False):
     message = "Training with the new global model"
     print(message, flush=True)
     loop.run_until_complete(send_log(message))
-    w_local = train(global_model)
+    w_local = train(global_model, rounds)
     del global_model
     gc.collect()
     send_encrypted_model(model=w_local, HE=HE)

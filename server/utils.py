@@ -73,6 +73,7 @@ def send_message(address: str, port: int, data: bytes, init: bool, encrypted: bo
             url = "http://" + address + ":" + str(port) + "/models"
     payload = {
         "data": data.decode("cp437"),
+        "rounds": rounds,
     }
     print(f"Model sent to {url}")
     return requests.post(url=url, data=json.dumps(payload), timeout=None)
@@ -272,5 +273,28 @@ def process_failed_request(request):
     print(message, flush=True)
     loop.run_until_complete(send_log(message))
     send_global_model(model=w_global, encrypted=get_config("encrypted"), failed=True, subjects=cids)
+
+    return message
+
+
+def process_resume_request(request):
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+
+    message = f"Loading the global model..."
+    print(message, flush=True)
+    loop.run_until_complete(send_log(message))
+    n_channels = get_config(key="n_channels")
+    n_hidden_layers = get_config(key="n_hidden_layers")
+    n_layers = get_config(key="n_layers")
+    n_classes = get_config(key="n_classes")
+    drop_prob = get_config(key="drop_prob")
+    w_global = SingleLSTMEncoder(n_channels, n_hidden_layers, n_layers, n_classes, drop_prob)
+    w_global.load_state_dict(torch.load("w_global.pt"))
+
+    message = f"Sending the global model..."
+    print(message, flush=True)
+    loop.run_until_complete(send_log(message))
+    send_global_model(model=w_global, encrypted=get_config("encrypted"))
 
     return message
