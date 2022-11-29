@@ -2,7 +2,7 @@ client/__pycache__/*
 server/__pycache__/*
 client/log_dir/*
 data/*
-server/*
+server/rounds.json
 client/src/__pycache__/*
 server/src/__pycache__/*
 *.log
@@ -23,3 +23,4 @@ client/keys/s_rotate_key
 client/keys/s_secret_key
 test/*
 client/core
+*.sbj

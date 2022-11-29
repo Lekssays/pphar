@@ -238,11 +238,11 @@ def encrypt_model(HE, model):
     asyncio.set_event_loop(loop)
 
     while True:
-        free = psutil.virtual_memory().free/(1024**2)
-        message = f"The free memory is {free} Megabytes"
+        available = psutil.virtual_memory().available/(1024**2)
+        message = f"The available memory is {available} Megabytes"
         print(message, flush=True)
         loop.run_until_complete(send_log(message))
-        if free > 2048:
+        if available > 2048:
             break
         wait = random.randint(3,5)
         message = f"Not enough memory :( waiting {wait} seconds for our slot..."
@@ -257,9 +257,9 @@ def encrypt_model(HE, model):
     loop.run_until_complete(send_log(message))
     for k in model.keys():
         if device_id == -1:
-            enc_t = HE.encrypt(model[k].numpy().flatten().astype(np.float32))
+            enc_t = HE.encrypt(model[k].numpy().flatten().astype(np.float64))
         else:
-            enc_t = HE.encrypt(model[k].detach().cpu().numpy().flatten().astype(np.float32))
+            enc_t = HE.encrypt(model[k].detach().cpu().numpy().flatten().astype(np.float64))
         model[k] = enc_t.to_bytes()
         del enc_t
         gc.collect()

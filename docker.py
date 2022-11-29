@@ -14,6 +14,11 @@ def report(exited_containers: list):
     res = requests.post(url=url, json=payload, headers={'Content-Type': 'application/json'}, timeout=None)
 
 
+def resume():
+    url = "http://" + os.getenv("PPHAR_SERVER_HOST") + ":" + os.getenv("PPHAR_SERVER_PORT") + "/resume"
+    res = requests.get(url=url)
+
+
 def get_exited_containers():
     command = "docker ps -a  --filter ancestor=lekssays/pphar-client:gpu --filter status=exited --format '{{.Names}}'"
     exited_containers = subprocess.check_output(command, shell=True).decode()

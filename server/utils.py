@@ -10,6 +10,7 @@ import psutil
 import time
 import random
 import gc
+import glob
 
 from collections import OrderedDict
 from datetime import datetime
@@ -213,6 +214,19 @@ def process_request(request):
         return message
 
 
+def add_subject(subject: str):
+    f = open("./subjects/" + subject + ".sbj", "w")
+    f.write("added")
+    f.close()
+
+
+def clear_subjects_directory():
+    files = glob.glob('./subjects/*')
+    for f in files:
+        if os.path.isfile(f):
+            os.remove(f)
+
+
 def process_encrypted_request(request):
     global w_locals
     loop = asyncio.new_event_loop()
@@ -239,22 +253,22 @@ def process_encrypted_request(request):
 
     sender = request['sender']
     print(f"Received HE={HE} from {sender}")
+    
+    add_subject(sender)
+    w_locals.append(enc_model)
+    del enc_model
+    gc.collect()
+    message = f"Received an encrypted local model from {sender}"
+    print(message, flush=True)
+    loop.run_until_complete(send_log(message))
 
-    if len(w_locals) < len(get_config(key="subjects")) - 1:
-        w_locals.append(enc_model)
-        del enc_model
-        gc.collect()
-        message = f"Received an encrypted local model from {sender}"
-        print(message, flush=True)
-        loop.run_until_complete(send_log(message))
-        return message
-    else:
+    if len(glob.glob('./subjects/*.sbj')) == len(get_config(key="subjects")):
         message = f"Aggregating encrypted local models from {sender}"
         print(message, flush=True)
         loop.run_until_complete(send_log(message))
         enc_w_global = EncFedAvg(HE=HE, enc_w=w_locals)
         w_locals.clear()
-
+        
         message = "Saving the encypted aggregated global model locally."
         print(message, flush=True)
         loop.run_until_complete(send_log(message))
@@ -265,10 +279,13 @@ def process_encrypted_request(request):
         del enc_w_global
         gc.collect()
 
+        clear_subjects_directory()
+
         message = f"Sent aggregated global model to {sender}"
         print(message, flush=True)
         loop.run_until_complete(send_log(message))
-        return message
+    
+    return message
 
 
 def get_container_id(name: str):
