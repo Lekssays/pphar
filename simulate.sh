@@ -25,7 +25,8 @@ docker stop $(docker ps -a -q  --filter ancestor=lekssays/pphar-client:cpu)
 
 docker rm $(docker ps -a -q  --filter ancestor=lekssays/pphar-client:cpu)
 
-rm ./client/init.pt
+rm ./client/*.pt
+rm ./server/subjects/*.sbj
 
 echo "Generating docker-compose.yaml..."
 python3 generator.py -g $MODE
