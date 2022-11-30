@@ -11,6 +11,7 @@ import os
 import websockets
 import psutil
 import gc
+import opacus
 
 from collections import OrderedDict
 from datetime import datetime
@@ -20,20 +21,11 @@ from src.dataset import LoadDatasetEval, LoadStrategyB
 from src.local_training import LocalTraining
 from src.metrics import calc_accuracy, AverageMeter
 from src.SingleLSTM import SingleLSTMEncoder
+from src.DPLSTM import DPLSTMEncoder
 from Pyfhel import Pyfhel, PyCtxt
 
 
-<<<<<<< HEAD
-device_id = -1
-train_on_gpu = torch.cuda.is_available()
-if(train_on_gpu):
-    device_id = get_device_id(torch.cuda.is_available())
-device = torch.device(f"cuda:{device_id}" if device_id >= 0 else "cpu")
-
-encryption_notifications = []
-=======
 global device
->>>>>>> Single call to device and passing it around
 
 def get_config(key: str):
     with open("config.json", "r") as f:
@@ -54,7 +46,6 @@ def from_bytes(content: bytes) -> torch.Tensor:
     return loaded_content
 
 
-<<<<<<< HEAD
 def send_message(address: str, port: int, model: bytes, HE=None):
     if bool(get_config(key="encrypted")):
         url = "http://" + address + ":" + str(port) + "/enc_models"
@@ -77,12 +68,6 @@ def send_message(address: str, port: int, model: bytes, HE=None):
     del payload
     gc.collect()
     return res
-=======
-def send_message(address: str, port: int, data: bytes):
-    url = "http://" + address + ":" + str(port) + "/models"
-    res = requests.post(url=url, data=data, headers={'Content-Type': 'application/octet-stream'})
-    return res.content
->>>>>>> Single call to device and passing it around
 
 
 def send_model(model: OrderedDict):
@@ -334,8 +319,16 @@ def process_encrypted_request(request, init=False):
     n_layers = get_config(key="n_layers")
     n_classes = get_config(key="n_classes")
     drop_prob = get_config(key="drop_prob")
-    global_model = SingleLSTMEncoder(n_channels, n_hidden_layers, n_layers, n_classes, drop_prob)
-    global_model.load_state_dict(w_global)
+    
+    if int(subject) in get_config(key="dp_sgd_clients"):
+        global_model = DPLSTMEncoder(n_channels, n_hidden_layers, n_layers, n_classes, drop_prob)   
+        for keys in w_global.keys():
+            if keys not in drop_keys:
+                global_model.state_dict()[keys] = w_global[keys]
+    else:
+        global_model = SingleLSTMEncoder(n_channels, n_hidden_layers, n_layers, n_classes, drop_prob)
+        global_model.load_state_dict(w_global)
+
     del w_global
     gc.collect()
     message = "Training with the new global model"
@@ -354,21 +347,33 @@ def process_encrypted_request(request, init=False):
 def process_request(request):
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
+    
     w_global = from_bytes(request.json.get("data").encode("cp437"))
     if type(w_global) != OrderedDict:
         message = "The received global model is not an OrderedDict."
         print(message, flush=True)
         loop.run_until_complete(send_log(message))
         return None
+    
+    drop_keys = ["lstm.l0.ih.weight", "lstm.l0.ih.bias", "lstm.l0.hh.weight", "lstm.l0.hh.bias"]
     n_channels = get_config(key="n_channels")
     n_hidden_layers = get_config(key="n_hidden_layers")
     n_layers = get_config(key="n_layers")
     n_classes = get_config(key="n_classes")
     drop_prob = get_config(key="drop_prob")
-    global_model = SingleLSTMEncoder(n_channels, n_hidden_layers, n_layers, n_classes, drop_prob)
-    global_model.load_state_dict(w_global)
+    
+    if int(subject) in get_config(key="dp_sgd_clients"):
+        global_model = DPLSTMEncoder(n_channels, n_hidden_layers, n_layers, n_classes, drop_prob)   
+        for keys in w_global.keys():
+            if keys not in drop_keys:
+                global_model.state_dict()[keys] = w_global[keys]
+    else:
+        global_model = SingleLSTMEncoder(n_channels, n_hidden_layers, n_layers, n_classes, drop_prob)
+        global_model.load_state_dict(w_global)
+    
     del w_global
     gc.collect()
+    
     message = "Training with the new global model"
     print(message, flush=True)
     loop.run_until_complete(send_log(message))
