@@ -84,7 +84,7 @@ def send_model(model: OrderedDict):
     return "Sent the local model"
 
 
-def train(global_model):
+def train(global_model, rounds):
     device_id = -1
     device_id = get_device_id(torch.cuda.is_available())
     global device
@@ -314,6 +314,7 @@ def process_encrypted_request(request, init=False):
     if not init:
         w_global = decrypt_global_model(HE=HE, enc_w_avg=w_global)
 
+    drop_keys = ["lstm.l0.ih.weight", "lstm.l0.ih.bias", "lstm.l0.hh.weight", "lstm.l0.hh.bias"]
     n_channels = get_config(key="n_channels")
     n_hidden_layers = get_config(key="n_hidden_layers")
     n_layers = get_config(key="n_layers")

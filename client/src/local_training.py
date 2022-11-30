@@ -157,6 +157,7 @@ class LocalTraining():
             valid_loss_epoch.update(cur_loss.item())
             valid_acc_epoch.update(acc,X.size(0))
         return valid_acc_epoch.avg, valid_loss_epoch.avg
+
     
     def get_args(self):
         with open("/client/config.json", "r") as f:

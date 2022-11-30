@@ -83,7 +83,6 @@ class LoadDatasets:
         labels_train_file = src+str(subject)+"/labels_train_ind.npy"
         labels_test_file = src+str(subject)+"/labels_test_ind.npy"
 	
-	
         data_train = np.load(data_train_file)
         data_test = np.load(data_test_file)
         labels_train = np.load(labels_train_file)

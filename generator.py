@@ -9,7 +9,12 @@ def parse_args():
                         dest = "gpu",
                         help = "0 CPU, 1 GPU",
                         default = "0",
-                        required = True)          
+                        required = True)
+    parser.add_argument('-d', '--dataset',
+                        dest = "dataset",
+                        help = "Available datasets: wisdm and pamap2",
+                        default = "pamap2",
+                        required = False)         
     return parser.parse_args()
 
 
@@ -25,7 +30,7 @@ def get_config(key: str):
     return config[key]
 
 
-def generate_peers_configs(gpu: bool) -> list:
+def generate_peers_configs(gpu: bool, dataset: str) -> list:
     configs = []
     _peers = []
 
@@ -42,6 +47,7 @@ def generate_peers_configs(gpu: bool) -> list:
         content = content.replace("external_port", "444" + str(subject))
         _peers.append("subject" + str(subject) + ".pphar.io")
         content = content.replace("subject_id", str(subject))
+        content = content.replace("dataset", dataset)
         config_file.close()
         configs.append(content)
 
@@ -77,7 +83,8 @@ def generate_docker_compose(configs: list):
 def main():
     print("docker-compose.yaml Generator for PPHAR")
     gpu = bool(int(parse_args().gpu))
-    configs = generate_peers_configs(gpu=gpu)
+    dataset = parse_args().dataset
+    configs = generate_peers_configs(gpu=gpu, dataset=dataset)
     generate_docker_compose(configs=configs)
 
 

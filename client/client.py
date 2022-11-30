@@ -32,7 +32,7 @@ def init():
     loop.run_until_complete(send_log(message))
     if get_config("encrypted"):
         print("encrypted init", flush=True)
-        _ = process_encrypted_request(request=request, init=True)
+        process_encrypted_request(request=request, init=True)
         torch.cuda.empty_cache()
     else:
         process_request(request=request)

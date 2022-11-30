@@ -6,6 +6,7 @@ if [[ $# -lt 1 ]] ; then
 else
   MODE=$1
   LOCAL=$2
+  DATASET=$3
   shift
 fi
 
@@ -29,7 +30,7 @@ rm ./client/*.pt
 rm ./server/subjects/*.sbj
 
 echo "Generating docker-compose.yaml..."
-python3 generator.py -g $MODE
+python3 generator.py -g $MODE -d $DATASET
 sleep 5
 
 if [ "${LOCAL}" == "1" ]; then
