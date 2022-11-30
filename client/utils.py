@@ -319,7 +319,8 @@ def process_encrypted_request(request, init=False):
     n_layers = get_config(key="n_layers")
     n_classes = get_config(key="n_classes")
     drop_prob = get_config(key="drop_prob")
-    
+    subject = os.getenv("PPHAR_SUBJECT_ID")
+
     if int(subject) in get_config(key="dp_sgd_clients"):
         global_model = DPLSTMEncoder(n_channels, n_hidden_layers, n_layers, n_classes, drop_prob)   
         for keys in w_global.keys():
@@ -361,7 +362,8 @@ def process_request(request):
     n_layers = get_config(key="n_layers")
     n_classes = get_config(key="n_classes")
     drop_prob = get_config(key="drop_prob")
-    
+    subject = os.getenv("PPHAR_SUBJECT_ID")
+
     if int(subject) in get_config(key="dp_sgd_clients"):
         global_model = DPLSTMEncoder(n_channels, n_hidden_layers, n_layers, n_classes, drop_prob)   
         for keys in w_global.keys():

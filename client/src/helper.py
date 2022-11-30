@@ -7,13 +7,9 @@ import numpy as np
 import random
 from time import sleep
 import os
-<<<<<<< HEAD
 
 
 dont_touch_gpu_ids = []
-=======
-dont_touch_gpu_ids = [1]
->>>>>>> Fixed opacus layers
 memory_max = 2300
 
 class Logger:
