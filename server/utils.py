@@ -57,7 +57,10 @@ def to_bytes(content: OrderedDict) -> bytes:
 
 def from_bytes(content: bytes) -> torch.Tensor:
     buff = io.BytesIO(content)
-    loaded_content = torch.load(buff)
+    if device_id == -1:
+        loaded_content = torch.load(buff, map_location=torch.device('cpu'))
+    else:
+        loaded_content = torch.load(buff)
     return loaded_content
 
 

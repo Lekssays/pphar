@@ -27,6 +27,9 @@ from Pyfhel import Pyfhel, PyCtxt
 
 global device
 
+encryption_notifications = []
+
+
 def get_config(key: str):
     with open("config.json", "r") as f:
         config = json.load(f)
@@ -270,12 +273,12 @@ def encrypt_model(HE, model):
 def send_encrypted_model(HE, model):
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    enc_model = encrypt_model(HE=HE, model=model)
     address = os.getenv("PPHAR_SERVER_HOST")
     port = int(os.getenv("PPHAR_SERVER_PORT"))
-    send_message(address=address, port=port, HE=HE, model=enc_model)
-    del enc_model
-    gc.collect()
+    if os.getenv("PPHAR_CORE_ID") in get_config(key="he_clients"):
+        send_message(address=address, port=port, HE=HE, model=encrypt_model(HE=HE, model=model))
+    else:
+        send_message(address=address, port=port, HE=HE, model=model)
     message = "Sent the encrypted local model to " + address
     print(message, flush=True)
     loop.run_until_complete(send_log(message))
@@ -419,7 +422,8 @@ def send_encryption_notification(mode: str):
     asyncio.set_event_loop(loop)
 
     if mode == "FREE":
-        encryption_notifications.remove(os.getenv("PPHAR_CORE_ID"))
+        if os.getenv("PPHAR_CORE_ID") in encryption_notifications:
+            encryption_notifications.remove(os.getenv("PPHAR_CORE_ID"))
     elif mode == "RESERVE":
         if os.getenv("PPHAR_CORE_ID") not in encryption_notifications:
             encryption_notifications.append(os.getenv("PPHAR_CORE_ID"))
