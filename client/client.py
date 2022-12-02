@@ -57,7 +57,7 @@ def process_encrypted_models():
 
 @app.route("/encrypting", methods = ['POST'])
 def encrypting():
-    process_encryption_notification(request=request)
+    process_memory_queue_action(request=request)
     return "Received"
 
 

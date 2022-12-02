@@ -27,7 +27,7 @@ from Pyfhel import Pyfhel, PyCtxt
 
 global device
 
-encryption_notifications = []
+memory_queue = []
 
 
 def get_config(key: str):
@@ -253,7 +253,7 @@ def encrypt_model(HE, model):
         loop.run_until_complete(send_log(message))
         time.sleep(wait)
     
-    send_encryption_notification(mode="RESERVE")
+    send_memory_queue_action(mode="RESERVE")
 
     message = "Encrypting the local model.."
     print(message, flush=True)
@@ -343,8 +343,8 @@ def process_encrypted_request(request, init=False):
     send_encrypted_model(model=w_local, HE=HE)
     del w_local
     gc.collect()
-    send_encryption_notification(mode="FREE")
-    encryption_notifications.clear()
+    send_memory_queue_action(mode="FREE")
+    memory_queue.clear()
 
 
 def process_request(request):
@@ -389,7 +389,7 @@ def process_request(request):
     gc.collect()
 
 
-def process_encryption_notification(request):
+def process_memory_queue_action(request):
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     request = json.loads(request.get_data())
@@ -397,52 +397,36 @@ def process_encryption_notification(request):
     mode = request["mode"]
     message = ""
     if mode == "FREE":
-        message = f"Removed {sender} from encryption notifications"
-        if sender in encryption_notifications:
-            encryption_notifications.remove(sender)
+        message = f"Removed {sender} from memory queue"
+        if sender in memory_queue:
+            memory_queue.remove(sender)
     elif mode == "RESERVE":
-        if sender not in encryption_notifications:
+        if sender not in memory_queue:
             while True:
-                if len(encryption_notifications) < 3:
-                    encryption_notifications.append(sender)
+                if len(memory_queue) < 3:
+                    memory_queue.append(sender)
                     break
-                message = f"Waiting 2 seconds for the list to be freed / Current list = {str(encryption_notifications)}"
+                message = f"Waiting 2 seconds for the list to be freed / Current list = {str(memory_queue)}"
                 print(message, flush=True)
                 loop.run_until_complete(send_log(message))
                 time.sleep(2)    
-        message = f"Added {sender} from encryption notifications" 
+        message = f"Added {sender} from memory queue" 
     print(message, flush=True)
     loop.run_until_complete(send_log(message))
 
 
-def send_encryption_notification(mode: str):
+def send_memory_queue_action(mode: str):
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
 
     if mode == "FREE":
-        if os.getenv("PPHAR_CORE_ID") in encryption_notifications:
-            encryption_notifications.remove(os.getenv("PPHAR_CORE_ID"))
+        if os.getenv("PPHAR_CORE_ID") in memory_queue:
+            memory_queue.remove(os.getenv("PPHAR_CORE_ID"))
     elif mode == "RESERVE":
-        if os.getenv("PPHAR_CORE_ID") not in encryption_notifications:
-            encryption_notifications.append(os.getenv("PPHAR_CORE_ID"))
+        if os.getenv("PPHAR_CORE_ID") not in memory_queue:
+            memory_queue.append(os.getenv("PPHAR_CORE_ID"))
 
-    count = 0
-    while True:
-        if len(encryption_notifications) < 3:
-            break
-        message = f"Waiting 3 seconds for the list to be freed / Current list = {str(encryption_notifications)}"
-        print(message, flush=True)
-        loop.run_until_complete(send_log(message))
-        time.sleep(3)
-        if count > 5:
-            if os.getenv("PPHAR_CORE_ID") in encryption_notifications:
-                encryption_notifications.remove(os.getenv("PPHAR_CORE_ID"))
-        if count > 10:
-            encryption_notifications.clear()
-            count = 0
-        count += 1
-
-    message = f"Sending encryption notifications with mode = {mode} / Current list = {str(encryption_notifications)}"
+    message = f"Sending memory queue with mode = {mode} / Current list = {str(memory_queue)}"
     print(message, flush=True)
     loop.run_until_complete(send_log(message))    
     payload = {

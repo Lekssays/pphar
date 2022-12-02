@@ -1,8 +1,8 @@
 {
     "epochs": 30,
     "subjects": [1,2,5,6,7,8],
-    "dp_sgd_clients" : [2],
-    "he_clients": [1],
+    "dp_sgd_clients" : [1],
+    "he_clients": [2],
     "n_subjects": 6,
     "n_servers": 1,
     "frac": 1.0,

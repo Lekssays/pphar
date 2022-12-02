@@ -93,8 +93,10 @@ def send_global_model(model, init=False, encrypted=False, failed=False, subjects
     if resumed:
         rounds = load_rounds()
 
-    if not failed: 
+    if not failed:
         subjects = get_config(key="subjects")
+    else:
+        rounds -= 1
     
 
     data = to_bytes(content=model)
