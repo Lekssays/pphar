@@ -1,7 +1,6 @@
   core_id:
     container_name: core_id
     image: lekssays/pphar-client:gpu
-    restart: on-failure
     privileged: true
     deploy:
       resources:

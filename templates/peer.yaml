@@ -1,7 +1,6 @@
   core_id:
     container_name: core_id
     image: lekssays/pphar-client:cpu
-    restart: on-failure
     environment:
     - PPHAR_CORE_ID=core_id
     - PPHAR_SUBJECT_ID=subject_id
