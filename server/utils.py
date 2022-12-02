@@ -17,7 +17,7 @@ import numpy as np
 from collections import OrderedDict
 from datetime import datetime
 from src.main_fed import FedAvg
-from Pyfhel import Pyfhel, PyCtxt
+from Pyfhel import Pyfhel, PyCtxt, PyPtxt
 from multiprocessing import Process
 from src.SingleLSTM import SingleLSTMEncoder
 from helper import get_device_id
@@ -153,6 +153,18 @@ def load_rounds():
 def EncFedAvg(HE, enc_w):
     n = 1.0 / len(enc_w)
     enc_w_avg = enc_w[0]
+
+    for k in enc_w_avg.keys():
+        for i in range(0, len(enc_w)):
+            if type(enc_w[i][k]) == PyPtxt:
+                enc_w[i][k] = np.double(enc_w[i][k].decode())
+            if type(enc_w_avg[k]) == PyPtxt:
+                enc_w_avg[k] = np.double(enc_w_avg[k].decode())
+            if type(enc_w_avg[k]) == float:
+                enc_w_avg[k] = np.double(enc_w_avg[k])
+            if type(enc_w[i][k]) == float:
+                enc_w[i][k] = np.double(enc_w[i][k])
+
     for k in enc_w_avg.keys():
         for i in range(1, len(enc_w)):
             enc_w_avg[k] = enc_w[i][k] + enc_w_avg[k]
@@ -160,6 +172,7 @@ def EncFedAvg(HE, enc_w):
         HE.relinKeyGen()
         HE.rescale_to_next(enc_w_avg[k])
         enc_w_avg[k] = enc_w_avg[k].to_bytes().decode('cp437')
+
     return enc_w_avg
 
 

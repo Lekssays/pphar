@@ -27,14 +27,23 @@ def get_exited_containers():
     return exited_containers
 
 
+def start_containers(containers: list):
+    for container in containers:
+        command = "docker-compose up -d {}"
+        _ = subprocess.check_output(command, shell=True).decode()
+
+
 def main():
     print("Starting docker status checker cronjob")
     while True:
         exited_containers = get_exited_containers()
         print("Exited containers = ", exited_containers)
         if len(exited_containers) > 0:
-            report(exited_containers)
+            start_containers(containers=exited_containers)
+            time.sleep(3)
+            report(exited_containers=exited_containers)
         time.sleep(5)
+
 
 if __name__ == '__main__':
     main()

@@ -201,7 +201,7 @@ def decrypt_global_model(HE, enc_w_avg):
                 m *= i
             t = t[0:m]
             t = t.reshape(shapes[k])
-        enc_w_avg[k] = torch.tensor(t, dtype=torch.float64)
+        enc_w_avg[k] = torch.tensor(t, dtype=torch.double)
     return enc_w_avg
 
 
@@ -245,24 +245,22 @@ def encrypt_model(HE, model):
         message = f"The available memory is {available} Megabytes"
         print(message, flush=True)
         loop.run_until_complete(send_log(message))
-        if available > 2048:
+        if available > 4096:
+            send_memory_queue_action(mode="RESERVE")
             break
         wait = random.randint(3,5)
         message = f"Not enough memory :( waiting {wait} seconds for our slot..."
         print(message, flush=True)
         loop.run_until_complete(send_log(message))
         time.sleep(wait)
-    
-    send_memory_queue_action(mode="RESERVE")
-
     message = "Encrypting the local model.."
     print(message, flush=True)
     loop.run_until_complete(send_log(message))
     for k in model.keys():
         if get_device_id(torch.cuda.is_available()) == -1:
-            enc_t = HE.encrypt(model[k].numpy().flatten().astype(np.float32))
+            enc_t = HE.encrypt(model[k].numpy().flatten().astype(np.double))
         else:
-            enc_t = HE.encrypt(model[k].detach().cpu().numpy().flatten().astype(np.float32))
+            enc_t = HE.encrypt(model[k].detach().cpu().numpy().flatten().astype(np.double))
         model[k] = enc_t.to_bytes()
         del enc_t
         gc.collect()
