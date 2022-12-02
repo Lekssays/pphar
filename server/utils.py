@@ -12,6 +12,8 @@ import random
 import gc
 import glob
 
+import numpy as np
+
 from collections import OrderedDict
 from datetime import datetime
 from src.main_fed import FedAvg
@@ -164,14 +166,14 @@ def process_request(request):
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
 
-    free = psutil.virtual_memory().free/(1024**2)
-    while free < 1024:
+    available = psutil.virtual_memory().available/(1024**2)
+    while available < 1024:
         wait = random.randint(2,8)
         message = f"Not enough memory :( waiting {wait} seconds for our slot..."
         print(message, flush=True)
         loop.run_until_complete(send_log(message))
         time.sleep(wait)
-        free = psutil.virtual_memory().free/(1024**2)
+        available = psutil.virtual_memory().available/(1024**2)
 
     model = from_bytes(request.json.get("data").encode('cp437'))
     sender = request.json.get('sender')
@@ -249,12 +251,15 @@ def process_encrypted_request(request):
     HE.from_bytes_rotate_key(request['rtk'].encode('cp437'))
 
     enc_model = from_bytes(content=request['data'].encode('cp437'))
-    for k in enc_model.keys():
-        enc_model[k] = PyCtxt(pyfhel=HE, bytestring=enc_model[k])
-
     sender = request['sender']
     print(f"Received HE={HE} from {sender}")
     
+    for k in enc_model.keys():
+        if get_subject_id(name=sender) in get_config(key="he_clients"):
+            enc_model[k] = PyCtxt(pyfhel=HE, bytestring=enc_model[k])
+        else:
+            enc_model[k] = HE.encodeFrac(enc_model[k].numpy().flatten().astype(np.double))
+
     add_subject(sender)
     w_locals.append(enc_model)
     del enc_model
@@ -289,7 +294,7 @@ def process_encrypted_request(request):
     return message
 
 
-def get_container_id(name: str):
+def get_subject_id(name: str):
     cid = ""
     for c in name:
         if c.isdigit():
@@ -313,7 +318,7 @@ def process_failed_request(request):
     cids = []
     for container in exited_containers:
         if ".pphar.io" in container:
-            cids.append(get_container_id(container))
+            cids.append(get_subject_id(container))
 
     message = f"Sending the global model to the exited containers..."
     print(message, flush=True)
