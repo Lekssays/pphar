@@ -135,10 +135,12 @@ def get_device_id(cuda_is_available):
     # # device_id = gpu_index if available_mem_on_gpu > memory_max else -1
     # logger.log(f"Automatically selected device id {device_id} (>= 0 for GPU, -1 for CPU)")
     device_id = -1
-    if subject_id % 2 == 0:
-        device_id = 0
-    else:
-        device_id = 1
+    if cuda_is_available:
+        if subject_id % 2 == 0:
+            device_id = 0
+        else:
+            device_id = 1
+    print("Selected GPU", device_id, flush=True)
     return device_id
 
 

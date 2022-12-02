@@ -88,7 +88,6 @@ def send_model(model: OrderedDict):
 
 
 def train(global_model, rounds):
-    device_id = -1
     device_id = get_device_id(torch.cuda.is_available())
     global device
     device = torch.device(f"cuda:{device_id}" if device_id >= 0 else "cpu")
@@ -260,7 +259,7 @@ def encrypt_model(HE, model):
     print(message, flush=True)
     loop.run_until_complete(send_log(message))
     for k in model.keys():
-        if device_id == -1:
+        if get_device_id(torch.cuda.is_available()) == -1:
             enc_t = HE.encrypt(model[k].numpy().flatten().astype(np.float32))
         else:
             enc_t = HE.encrypt(model[k].detach().cpu().numpy().flatten().astype(np.float32))
@@ -275,7 +274,7 @@ def send_encrypted_model(HE, model):
     asyncio.set_event_loop(loop)
     address = os.getenv("PPHAR_SERVER_HOST")
     port = int(os.getenv("PPHAR_SERVER_PORT"))
-    if os.getenv("PPHAR_CORE_ID") in get_config(key="he_clients"):
+    if int(os.getenv("PPHAR_SUBJECT_ID")) in get_config(key="he_clients"):
         send_message(address=address, port=port, HE=HE, model=encrypt_model(HE=HE, model=model))
     else:
         send_message(address=address, port=port, HE=HE, model=model)
@@ -323,9 +322,8 @@ def process_encrypted_request(request, init=False):
     n_layers = get_config(key="n_layers")
     n_classes = get_config(key="n_classes")
     drop_prob = get_config(key="drop_prob")
-    subject = os.getenv("PPHAR_SUBJECT_ID")
 
-    if int(subject) in get_config(key="dp_sgd_clients"):
+    if int(os.getenv("PPHAR_SUBJECT_ID")) in get_config(key="dp_sgd_clients"):
         global_model = DPLSTMEncoder(n_channels, n_hidden_layers, n_layers, n_classes, drop_prob)   
         for keys in w_global.keys():
             if keys not in drop_keys:
