@@ -60,14 +60,13 @@ def send_message(address: str, port: int, model: bytes, HE=None):
             'data': to_bytes(content=model).decode('cp437'),
             'sender': os.getenv("PPHAR_CORE_ID"),
         }
-        res = requests.post(url, data=json.dumps(payload), timeout=None)
     else:
         url = "http://" + address + ":" + str(port) + "/models"
         payload = {
             'sender': os.getenv("PPHAR_CORE_ID"),
             'data': to_bytes(content=model).decode('cp437'),
         }
-        res = requests.post(url=url, json=payload, headers={'Content-Type': 'application/json'}, timeout=None)
+    res = requests.post(url, data=json.dumps(payload), timeout=None)
     del payload
     gc.collect()
     return res
@@ -348,8 +347,10 @@ def process_encrypted_request(request, init=False):
 def process_request(request):
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    
-    w_global = from_bytes(request.json.get("data").encode("cp437"))
+
+    request = json.loads(request.get_data())
+    rounds = str(request["rounds"])
+    w_global = from_bytes(request["data"].encode('cp437'))    
     if type(w_global) != OrderedDict:
         message = "The received global model is not an OrderedDict."
         print(message, flush=True)
@@ -379,7 +380,7 @@ def process_request(request):
     message = "Training with the new global model"
     print(message, flush=True)
     loop.run_until_complete(send_log(message))
-    w_local = train(global_model)
+    w_local = train(global_model, rounds)
     del global_model
     gc.collect()
     send_model(model=w_local)
