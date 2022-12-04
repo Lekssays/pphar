@@ -7,7 +7,7 @@
     # NOTE: CHANGE TO YOUR REMOTE TRAINING SERVER: 0.0.0.0 if running in one machine
     - PPHAR_REMOTE_TRAINING_SERVER=193.206.183.144
     # NOTE: CHANGE TO YOUR LOG SERVER: ws://172.17.0.1:7777 if running in one machine
-    - PPHAR_LOG_SERVER_ENDPOINT=ws://193.206.183.35:7777
+    - PPHAR_LOG_SERVER_ENDPOINT=ws://193.206.183.144:7777
     command: /bin/bash /entry/hello.sh
     working_dir: /server
     volumes:

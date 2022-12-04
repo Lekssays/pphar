@@ -16,7 +16,7 @@
     - PPHAR_SERVER_HOST=193.206.183.143
     - PPHAR_SERVER_PORT=8585
     # NOTE: CHANGE TO YOUR LOG SERVER: ws://172.17.0.1:7777 if running in one machine
-    - PPHAR_LOG_SERVER_ENDPOINT=ws://193.206.183.35:7777
+    - PPHAR_LOG_SERVER_ENDPOINT=ws://193.206.183.144:7777
     command: /bin/bash /entry/hello.sh
     working_dir: /client
     ports:

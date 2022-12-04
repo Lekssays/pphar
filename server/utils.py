@@ -221,7 +221,8 @@ def process_request(request):
         message = f"Sent aggregated global model to all clients."
         print(message, flush=True)
         loop.run_until_complete(send_log(message))
-        return message
+    
+     return message
 
 
 def add_subject(subject: str):
