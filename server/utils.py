@@ -192,6 +192,7 @@ def process_request(request):
         loop.run_until_complete(send_log(message))
         return "Training finished."
 
+    add_subject(sender)
     w_locals.append(model)
     del model
     gc.collect()
@@ -222,7 +223,7 @@ def process_request(request):
         print(message, flush=True)
         loop.run_until_complete(send_log(message))
     
-     return message
+    return message
 
 
 def add_subject(subject: str):
