@@ -181,35 +181,25 @@ def process_request(request):
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
 
-    available = psutil.virtual_memory().available/(1024**2)
-    while available < 1024:
-        wait = random.randint(2,8)
-        message = f"Not enough memory :( waiting {wait} seconds for our slot..."
-        print(message, flush=True)
-        loop.run_until_complete(send_log(message))
-        time.sleep(wait)
-        available = psutil.virtual_memory().available/(1024**2)
-
-    model = from_bytes(request.json.get("data").encode('cp437'))
-    sender = request.json.get('sender')
+    request = json.loads(request.get_data())
+    model = from_bytes(content=request['data'].encode('cp437'))
+    sender = request['sender']
     
     rounds = get_rounds()
-    if rounds > get_config(key="epochs"):
+    if rounds > get_config(key="epochs")  - 1:
         message = "Training finished :)"
         print(message, flush=True)
         loop.run_until_complete(send_log(message))
         return "Training finished."
 
-    
-    if len(w_locals) and len(w_locals) <= len(get_config(key="subjects")) - 1:
-        w_locals.append(model)
-        del model
-        gc.collect()
-        message = f"Received a local model from {sender}"
-        print(message, flush=True)
-        loop.run_until_complete(send_log(message))
-        return message
-    else:
+    w_locals.append(model)
+    del model
+    gc.collect()
+    message = f"Received a local model from {sender}"
+    print(message, flush=True)
+    loop.run_until_complete(send_log(message))
+
+    if len(glob.glob('./subjects/*.sbj')) == len(get_config(key="subjects")):
         message = "Aggregating local models."
         print(message, flush=True)
         loop.run_until_complete(send_log(message))
@@ -225,6 +215,8 @@ def process_request(request):
         send_global_model(model=w_global, init=False, encrypted=False)
         del w_global
         gc.collect()
+
+        clear_subjects_directory()
 
         message = f"Sent aggregated global model to all clients."
         print(message, flush=True)
