@@ -43,13 +43,13 @@ def to_bytes(content: OrderedDict) -> bytes:
     return buff.read()
 
 
-def from_bytes(content: bytes) -> torch.Tensor:
+def from_bytes(content: bytes) -> OrderedDict:
     buff = io.BytesIO(content)
     loaded_content = torch.load(buff)
     return loaded_content
 
 
-def send_message(address: str, port: int, model: bytes, HE=None):
+def send_message(address: str, port: int, model: OrderedDict, HE=None):
     if bool(get_config(key="encrypted")):
         url = "http://" + address + ":" + str(port) + "/enc_models"
         payload = {
@@ -77,7 +77,7 @@ def send_model(model: OrderedDict):
     asyncio.set_event_loop(loop)
     address = os.getenv("PPHAR_SERVER_HOST")
     port = int(os.getenv("PPHAR_SERVER_PORT"))
-    send_message(address=address, port=port,model=to_bytes(content=model))
+    send_message(address=address, port=port,model=model)
     del model
     gc.collect()
     message = "Sending the local model to " + address
@@ -252,6 +252,7 @@ def encrypt_model(HE, model):
         print(message, flush=True)
         loop.run_until_complete(send_log(message))
         time.sleep(wait)
+
     message = "Encrypting the local model.."
     print(message, flush=True)
     loop.run_until_complete(send_log(message))
