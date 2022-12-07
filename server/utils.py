@@ -10,7 +10,6 @@ import psutil
 import time
 import random
 import gc
-import glob
 
 import numpy as np
 
@@ -23,7 +22,6 @@ from src.SingleLSTM import SingleLSTMEncoder
 from helper import get_device_id
 
 
-device_id = -1
 device_id = get_device_id(torch.cuda.is_available())
 device = torch.device(f"cuda:{device_id}" if device_id >= 0 else "cpu")
 
@@ -192,7 +190,6 @@ def process_request(request):
         loop.run_until_complete(send_log(message))
         return "Training finished."
 
-    add_subject(sender)
     w_locals.append(model)
     del model
     gc.collect()
@@ -200,7 +197,7 @@ def process_request(request):
     print(message, flush=True)
     loop.run_until_complete(send_log(message))
 
-    if len(glob.glob('./subjects/*.sbj')) == len(get_config(key="subjects")):
+    if len(w_locals) == len(get_config(key="subjects")):
         message = "Aggregating local models."
         print(message, flush=True)
         loop.run_until_complete(send_log(message))
@@ -211,32 +208,17 @@ def process_request(request):
         print(message, flush=True)
         loop.run_until_complete(send_log(message))
         torch.save(w_global, "w_global.pt")
-        save_rounds()
 
         send_global_model(model=w_global, init=False, encrypted=False)
         del w_global
         gc.collect()
-
-        clear_subjects_directory()
+        save_rounds()
 
         message = f"Sent aggregated global model to all clients."
         print(message, flush=True)
         loop.run_until_complete(send_log(message))
     
     return message
-
-
-def add_subject(subject: str):
-    f = open("./subjects/" + subject + ".sbj", "w")
-    f.write("added")
-    f.close()
-
-
-def clear_subjects_directory():
-    files = glob.glob('./subjects/*')
-    for f in files:
-        if os.path.isfile(f):
-            os.remove(f)
 
 
 def process_encrypted_request(request):
@@ -269,7 +251,6 @@ def process_encrypted_request(request):
         else:
             enc_model[k] = HE.encodeFrac(enc_model[k].numpy().flatten().astype(np.double))
 
-    add_subject(sender)
     w_locals.append(enc_model)
     del enc_model
     gc.collect()
@@ -277,7 +258,7 @@ def process_encrypted_request(request):
     print(message, flush=True)
     loop.run_until_complete(send_log(message))
 
-    if len(glob.glob('./subjects/*.sbj')) == len(get_config(key="subjects")):
+    if len(w_locals) == len(get_config(key="subjects")):
         message = f"Aggregating encrypted local models from {sender}"
         print(message, flush=True)
         loop.run_until_complete(send_log(message))
@@ -288,13 +269,11 @@ def process_encrypted_request(request):
         print(message, flush=True)
         loop.run_until_complete(send_log(message))
         torch.save(enc_w_global, "enc_w_global.pt")
-        save_rounds()
 
         send_global_model(model=enc_w_global, init=False, encrypted=True)
         del enc_w_global
         gc.collect()
-
-        clear_subjects_directory()
+        save_rounds()
 
         message = f"Sent aggregated global model to {sender}"
         print(message, flush=True)

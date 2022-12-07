@@ -1,13 +1,13 @@
 {
     "epochs": 30,
     "subjects": [1,2,5,6,7,8],
-    "dp_sgd_clients" : [6],
+    "dp_sgd_clients" : [],
     "he_clients": [],
     "n_subjects": 6,
     "n_servers": 1,
     "frac": 1.0,
-    "local_ep": 50,
-    "local_ep_dpsgd": 2,
+    "local_ep": 40,
+    "local_ep_dpsgd": 15,
     "local_bs": 10,
     "batch_size": 64,
     "lr": 0.001,
@@ -28,12 +28,12 @@
     "gp": -1,
     "stopping_rounds": 10,
     "seed": 1,
-    "seq_length": 200,
+    "seq_length": 237,
     "overlap": 0.79,
     "encrypted": false,
-    "epsilon": 0.1,
+    "epsilon": 2,
     "delta": 8e-5,
-    "max_per_sample_grad_norm" : 2,
+    "max_per_sample_grad_norm" : 1.5,
     "secure_mode" : false,
-    "local": false
+    "local": true
 }
