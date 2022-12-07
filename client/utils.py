@@ -23,6 +23,8 @@ from src.metrics import calc_accuracy, AverageMeter
 from src.SingleLSTM import SingleLSTMEncoder
 from src.DPLSTM import DPLSTMEncoder
 from Pyfhel import Pyfhel, PyCtxt
+import warnings
+warnings.filterwarnings("ignore")
 
 
 global device
@@ -367,11 +369,13 @@ def process_request(request):
     subject = os.getenv("PPHAR_SUBJECT_ID")
 
     if int(subject) in get_config(key="dp_sgd_clients"):
+        print("Here in DPSGD Client",flush=True)
         global_model = DPLSTMEncoder(n_channels, n_hidden_layers, n_layers, n_classes, drop_prob)   
         for keys in w_global.keys():
             if keys not in drop_keys:
                 global_model.state_dict()[keys] = w_global[keys]
     else:
+        print("Here in non-DPSGD Client",flush=True)
         global_model = SingleLSTMEncoder(n_channels, n_hidden_layers, n_layers, n_classes, drop_prob)
         global_model.load_state_dict(w_global)
     

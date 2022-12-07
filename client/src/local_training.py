@@ -81,7 +81,6 @@ class LocalTraining():
                                             target_epsilon=self.epsilon,
                                             epochs=self.epochs,
                                         )
-        print("Memory Allocated",torch.cuda.memory_allocated(),flush=True)
         for epoch in range(self.current_epoch, self.epochs):
             self.current_epoch = epoch
             self.train_one_epoch()
@@ -102,7 +101,6 @@ class LocalTraining():
         # self.train_data_loader = self.train_data_loader.detach.cpu()
         # del self.model
         # del self.train_data_loader
-        print("Memory Allocated Now",torch.cuda.memory_allocated(),flush=True)
         return best_parameters, valid_loss, self.best_valid_acc
 
     def train_one_epoch(self):

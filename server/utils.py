@@ -192,7 +192,7 @@ def process_request(request):
         loop.run_until_complete(send_log(message))
         return "Training finished."
 
-    add_subject(sender)
+    # add_subject(sender)
     w_locals.append(model)
     del model
     gc.collect()
@@ -200,7 +200,7 @@ def process_request(request):
     print(message, flush=True)
     loop.run_until_complete(send_log(message))
 
-    if len(glob.glob('./subjects/*.sbj')) == len(get_config(key="subjects")):
+    if len(w_locals) == len(get_config(key="subjects")): #glob.glob('./subjects/*.sbj'))
         message = "Aggregating local models."
         print(message, flush=True)
         loop.run_until_complete(send_log(message))
@@ -211,13 +211,14 @@ def process_request(request):
         print(message, flush=True)
         loop.run_until_complete(send_log(message))
         torch.save(w_global, "w_global.pt")
-        save_rounds()
+        
 
         send_global_model(model=w_global, init=False, encrypted=False)
+        save_rounds()
         del w_global
         gc.collect()
 
-        clear_subjects_directory()
+        # clear_subjects_directory()
 
         message = f"Sent aggregated global model to all clients."
         print(message, flush=True)

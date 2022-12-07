@@ -9,6 +9,7 @@ from torch import nn
 
 def FedAvg(w):
     w_avg = copy.deepcopy(w[0])
+    print("Keys: ", w_avg.keys(),flush=True)
     for k in w_avg.keys():
         for i in range(1, len(w)):
             w_avg[k] = w_avg[k].detach().cpu()
