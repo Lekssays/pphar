@@ -150,28 +150,24 @@ def load_rounds():
 
 def EncFedAvg(HE, enc_w):
     n = 1.0 / len(enc_w)
-    enc_w_avg = enc_w[0]
 
-    for k in enc_w_avg.keys():
+    for k in enc_w[0].keys():
         for i in range(0, len(enc_w)):
             if type(enc_w[i][k]) == PyPtxt:
                 enc_w[i][k] = np.double(enc_w[i][k].decode())
-            if type(enc_w_avg[k]) == PyPtxt:
-                enc_w_avg[k] = np.double(enc_w_avg[k].decode())
-            if type(enc_w_avg[k]) == float:
-                enc_w_avg[k] = np.double(enc_w_avg[k])
             if type(enc_w[i][k]) == float:
                 enc_w[i][k] = np.double(enc_w[i][k])
 
-    for k in enc_w_avg.keys():
+    for k in enc_w[0].keys():
         for i in range(1, len(enc_w)):
-            enc_w_avg[k] = enc_w[i][k] + enc_w_avg[k]
-        enc_w_avg[k] *= n
+            print(type(enc_w[i][k]), type(enc_w[0][k]))
+            enc_w[0][k] = enc_w[i][k] + enc_w[0][k]
+        enc_w[0][k] *= n
         HE.relinKeyGen()
-        HE.rescale_to_next(enc_w_avg[k])
-        enc_w_avg[k] = enc_w_avg[k].to_bytes().decode('cp437')
+        HE.rescale_to_next(enc_w[0][k])
+        enc_w[0][k] = enc_w[0][k].to_bytes().decode('cp437')
 
-    return enc_w_avg
+    return enc_w[0]
 
 
 def process_request(request):

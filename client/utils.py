@@ -95,7 +95,7 @@ def train(global_model, rounds):
     loss_train = []
     loss_locals = []
     local_valid_acc = []
-    local = LocalTraining(device)
+    local = LocalTraining()
     w_local, loss, valid_acc = local.train(model=copy.deepcopy(global_model).to(device))
     loss_locals.append(copy.deepcopy(loss))
     local_valid_acc.append(valid_acc)
