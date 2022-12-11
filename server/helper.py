@@ -39,8 +39,7 @@ class Logger:
 
 
 def get_device_id(cuda_is_available):
-    
-    logger = Logger()
+    # logger = Logger()
     # if not cuda_is_available:
     #     return -3
     # gpu_stats = subprocess.check_output(
@@ -61,9 +60,9 @@ def get_device_id(cuda_is_available):
     # available_mem_on_gpu = stats[gpu_index, 1]
     # device_id = gpu_index if available_mem_on_gpu > memory_max else -1
     device_id = -1
-    print("-----------------------------------")
-    print("Selected GPU",device_id,flush=True)
-    logger.log(f"Automatically selected device id {device_id} (>= 0 for GPU, -1 for CPU)")
+    if cuda_is_available:
+        device_id = 0
+    print("Selected GPU", device_id, flush=True)
     return device_id
 
 

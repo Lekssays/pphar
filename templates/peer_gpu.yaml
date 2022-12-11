@@ -13,8 +13,8 @@
     - PPHAR_SUBJECT_ID=subject_id
     - PPHAR_PROJECT_DIRECTORY=/data/
     # NOTE: CHANGE TO YOUR SERVER: server1.pphar.io:5000 if running in one machine // 193.206.183.143:8585
-    - PPHAR_SERVER_HOST=server1.pphar.io
-    - PPHAR_SERVER_PORT=5000
+    - PPHAR_SERVER_HOST=193.206.183.143
+    - PPHAR_SERVER_PORT=8585
     # NOTE: CHANGE TO YOUR LOG SERVER: ws://172.17.0.1:7777 if running in one machine
     - PPHAR_LOG_SERVER_ENDPOINT=ws://172.17.0.1:7777
     command: /bin/bash /entry/hello.sh
