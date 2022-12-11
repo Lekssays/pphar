@@ -35,6 +35,7 @@ def process_request(data):
         loop.run_until_complete(send_log(message))
         return None
     drop_keys = ["lstm.l0.ih.weight", "lstm.l0.ih.bias", "lstm.l0.hh.weight", "lstm.l0.hh.bias"]
+    drop_keys = ['lstm.l0.ih.weight', 'lstm.l0.ih.bias', 'lstm.l0.hh.weight', 'lstm.l0.hh.bias', 'lstm.l1.ih.weight', 'lstm.l1.ih.bias', 'lstm.l1.hh.weight', 'lstm.l1.hh.bias']
     n_channels = get_config(key="n_channels")
     n_hidden_layers = get_config(key="n_hidden_layers")
     n_layers = get_config(key="n_layers")
@@ -46,8 +47,11 @@ def process_request(data):
         for keys in w_global.keys():
             if keys not in drop_keys:
                 global_model.state_dict()[keys] = w_global[keys]
+        # print("Input keys",global_model.state_dict().keys(),flush=True)
+        # print("Output keys",w_global.keys(),flush=True)
     else:
         global_model = SingleLSTMEncoder(n_channels, n_hidden_layers, n_layers, n_classes, drop_prob)
+        # print("Input keys",global_model.state_dict().keys(),flush=True)
         global_model.load_state_dict(w_global)
         
     message = "Training with the new global model"

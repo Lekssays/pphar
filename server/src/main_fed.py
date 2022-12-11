@@ -13,4 +13,6 @@ def FedAvg(w):
         for i in range(1, len(w)):
             w_avg[k] += w[i][k]
         w_avg[k] = torch.div(w_avg[k], len(w))
+    print("Aggreated Weights", w_avg, flush=True)
     return w_avg
+

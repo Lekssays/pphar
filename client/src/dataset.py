@@ -119,6 +119,7 @@ class LoadDatasets:
         
         self.load_data_logic(batch_size)
         ds_train_obj = TSDataset(self.X_train_processed,self.y_train)
+        print("Training data shape: ",self.X_train_processed.shape,flush=True)
         train_data_loader = T.utils.data.DataLoader(ds_train_obj,batch_size=batch_size, shuffle=False)
         return train_data_loader
 
@@ -126,6 +127,7 @@ class LoadDatasets:
     def prepare_test_data_loader(self,batch_size):
         self.load_data_logic(batch_size)
         ds_test_obj = TSDataset(self.X_test_processed,self.y_test)
+        print("Testing data shape: ",self.X_test_processed.shape,flush=True)
         test_data_loader = T.utils.data.DataLoader(ds_test_obj,batch_size=batch_size, shuffle=False)
         return test_data_loader
 
@@ -172,6 +174,7 @@ class LoadDatasetEval:
         
         self.load_data_logic(batch_size)
         ds_eval_obj = TSDataset(self.X_eval_processed,self.y_eval)
+        print("Evaluation Data Loader",self.X_eval_processed.shape,self.y_eval.shape,flush=True)
         eval_data_loader = T.utils.data.DataLoader(ds_eval_obj,batch_size=batch_size, shuffle=False)
         return eval_data_loader
 

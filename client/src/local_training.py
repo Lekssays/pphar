@@ -93,7 +93,19 @@ class LocalTraining():
             is_best = valid_acc > self.best_valid_acc
             if is_best:
                 self.best_valid_acc = valid_acc
-                best_parameters = self.model.state_dict()
+                if self.dpsgd_flag:
+                    # drop_keys = ["lstm.l0.ih.weight", "lstm.l0.ih.bias", "lstm.l0.hh.weight", "lstm.l0.hh.bias"]
+                    drop_keys = ['lstm.l0.ih.weight', 'lstm.l0.ih.bias', 'lstm.l0.hh.weight', 'lstm.l0.hh.bias', 'lstm.l1.ih.weight', 'lstm.l1.ih.bias', 'lstm.l1.hh.weight', 'lstm.l1.hh.bias']
+                    print("Module State Dict", self.model._module.state_dict().keys(),flush=True)
+                    temp_state_dict = self.model._module.state_dict()
+                    for keys in drop_keys:
+                        item=temp_state_dict.pop(keys)
+                        # del self.model._module.state_dict()[keys]
+                        # print("Popped",keys,flush=True)
+                    # print("Module State Dict After", temp_state_dict.keys(),flush=True)
+                    best_parameters = temp_state_dict#self.model._module.state_dict()
+                else:
+                    best_parameters = self.model.state_dict()
                 
         self.writer.flush()
         self.writer.close()
