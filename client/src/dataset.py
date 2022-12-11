@@ -7,10 +7,14 @@ import src.ts_processor as tsp
 
 from abc import ABC, abstractmethod
 
+from src.helper import get_device_id
+
+device_id = get_device_id(T.cuda.is_available())
+device = T.device(f"cuda:{device_id}" if device_id >= 0 else "cpu")
 
 class TSDataset(T.utils.data.Dataset):
     
-    def __init__(self, X,y,device):
+    def __init__(self, X,y):
         
         self.X = T.tensor(X,dtype=T.float32).to(device)
         self.y = T.tensor(y,dtype=T.int64).to(device)
@@ -43,16 +47,10 @@ class LoadStrategyA(Strategy):
         X_test = data['X_test']
         y_train = data['y_train'].reshape(-1)
         y_test = data['y_test'].reshape(-1)
-
-        if len(X_train.shape) <= 2: 
-            X_train_processed, y_train_processed = tsp_obj.process_standard_ts(X_train, y_train)
-            X_test_processed, y_test_processed = tsp_obj.process_standard_ts(X_test, y_test)
-        else:
-            X_train_processed = X_train
-            X_test_processed = X_test
-            y_train_processed = y_train
-            y_test_processed = y_test
-
+        
+        X_train_processed, y_train_processed = tsp_obj.process_standard_ts(X_train, y_train)
+        X_test_processed, y_test_processed = tsp_obj.process_standard_ts(X_test, y_test)
+        
         y_train = y_train_processed#pd.get_dummies( y_train_processed , prefix='labels' )
         y_test = y_test_processed#pd.get_dummies( y_test_processed , prefix='labels' )
         
@@ -76,12 +74,13 @@ class LoadStrategyB(Strategy):
 #Subject-Wise Loading Property
 class LoadDatasets:
     
-    def __init__(self,src,seq_length, subject, overlap,device,load_data_strategy: Strategy) -> None:
+    def __init__(self,src,seq_length, subject, overlap,load_data_strategy: Strategy) -> None:
         
         data_train_file = src+str(subject)+"/data_train_ind.npy"
         data_test_file = src+str(subject)+"/data_test_ind.npy"
         labels_train_file = src+str(subject)+"/labels_train_ind.npy"
         labels_test_file = src+str(subject)+"/labels_test_ind.npy"
+	
 	
         data_train = np.load(data_train_file)
         data_test = np.load(data_test_file)
@@ -92,7 +91,6 @@ class LoadDatasets:
         # self.batch_size=batch_size
         self.seq_length = seq_length
         self.overlap = overlap
-        self.device = device
         self._load_data_strategy = load_data_strategy
         
         
@@ -120,20 +118,22 @@ class LoadDatasets:
     def prepare_train_data_loader(self,batch_size):
         
         self.load_data_logic(batch_size)
-        ds_train_obj = TSDataset(self.X_train_processed,self.y_train,self.device)
+        ds_train_obj = TSDataset(self.X_train_processed,self.y_train)
+        print("Training data shape: ",self.X_train_processed.shape,flush=True)
         train_data_loader = T.utils.data.DataLoader(ds_train_obj,batch_size=batch_size, shuffle=False)
         return train_data_loader
 
     
     def prepare_test_data_loader(self,batch_size):
         self.load_data_logic(batch_size)
-        ds_test_obj = TSDataset(self.X_test_processed,self.y_test,self.device)
+        ds_test_obj = TSDataset(self.X_test_processed,self.y_test)
+        print("Testing data shape: ",self.X_test_processed.shape,flush=True)
         test_data_loader = T.utils.data.DataLoader(ds_test_obj,batch_size=batch_size, shuffle=False)
         return test_data_loader
 
 class LoadDatasetEval:
     
-    def __init__(self,src,seq_length, subject, overlap,device,load_data_strategy: Strategy) -> None:
+    def __init__(self,src,seq_length, subject, overlap,load_data_strategy: Strategy) -> None:
         
         data_eval_file = src+str(subject)+"_data_test_moe.npy"
         labels_eval_file = src+str(subject)+"_labels_test_moe.npy"
@@ -147,7 +147,6 @@ class LoadDatasetEval:
         self.seq_length = seq_length
         self.overlap = overlap
         self._load_data_strategy = load_data_strategy
-        self.device = device
         
         
     @property
@@ -174,8 +173,7 @@ class LoadDatasetEval:
     def prepare_eval_data_loader(self,batch_size):
         
         self.load_data_logic(batch_size)
-        ds_eval_obj = TSDataset(self.X_eval_processed,self.y_eval,self.device)
+        ds_eval_obj = TSDataset(self.X_eval_processed,self.y_eval)
+        print("Evaluation Data Loader",self.X_eval_processed.shape,self.y_eval.shape,flush=True)
         eval_data_loader = T.utils.data.DataLoader(ds_eval_obj,batch_size=batch_size, shuffle=False)
         return eval_data_loader
-
-

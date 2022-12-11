@@ -314,7 +314,7 @@ def process_encrypted_request(request, init=False):
     if not init:
         w_global = decrypt_global_model(HE=HE, enc_w_avg=w_global)
 
-    drop_keys = ["lstm.l0.ih.weight", "lstm.l0.ih.bias", "lstm.l0.hh.weight", "lstm.l0.hh.bias"]
+    drop_keys = ['lstm.l0.ih.weight', 'lstm.l0.ih.bias', 'lstm.l0.hh.weight', 'lstm.l0.hh.bias', 'lstm.l1.ih.weight', 'lstm.l1.ih.bias', 'lstm.l1.hh.weight', 'lstm.l1.hh.bias']
     n_channels = get_config(key="n_channels")
     n_hidden_layers = get_config(key="n_hidden_layers")
     n_layers = get_config(key="n_layers")
@@ -358,7 +358,7 @@ def process_request(request):
         loop.run_until_complete(send_log(message))
         return None
     
-    drop_keys = ["lstm.l0.ih.weight", "lstm.l0.ih.bias", "lstm.l0.hh.weight", "lstm.l0.hh.bias"]
+    drop_keys = ['lstm.l0.ih.weight', 'lstm.l0.ih.bias', 'lstm.l0.hh.weight', 'lstm.l0.hh.bias', 'lstm.l1.ih.weight', 'lstm.l1.ih.bias', 'lstm.l1.hh.weight', 'lstm.l1.hh.bias']
     n_channels = get_config(key="n_channels")
     n_hidden_layers = get_config(key="n_hidden_layers")
     n_layers = get_config(key="n_layers")
