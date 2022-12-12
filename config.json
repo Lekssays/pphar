@@ -30,10 +30,10 @@
     "seed": 1,
     "seq_length": 237,
     "overlap": 0.79,
-    "encrypted": false,
+    "encrypted": true,
     "epsilon": 1,
     "delta": 8e-5,
     "max_per_sample_grad_norm" : 1.5,
     "secure_mode" : false,
-    "local": true
+    "local": false
 }

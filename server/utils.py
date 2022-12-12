@@ -153,14 +153,15 @@ def EncFedAvg(HE, enc_w):
 
     for k in enc_w[0].keys():
         for i in range(0, len(enc_w)):
-            if type(enc_w[i][k]) == PyPtxt:
-                enc_w[i][k] = np.double(enc_w[i][k].decode())
             if type(enc_w[i][k]) == float:
                 enc_w[i][k] = np.double(enc_w[i][k])
 
     for k in enc_w[0].keys():
         for i in range(1, len(enc_w)):
-            print(type(enc_w[i][k]), type(enc_w[0][k]))
+            if type(enc_w[i][k]) == PyPtxt and type(enc_w[0][k]) == PyPtxt:
+                enc_w[i][k] = np.double(enc_w[i][k].decode())
+                enc_w[0][k] = np.double(enc_w[0][k].decode())
+            print("Data Types:", type(enc_w[i][k]), type(enc_w[0][k]), flush=True)
             enc_w[0][k] = enc_w[i][k] + enc_w[0][k]
         enc_w[0][k] *= n
         HE.relinKeyGen()
