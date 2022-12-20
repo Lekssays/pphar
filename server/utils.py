@@ -187,7 +187,8 @@ def process_request(request):
         loop.run_until_complete(send_log(message))
         return "Training finished."
 
-    w_locals.append(model)
+    entry = {'sender': sender, 'model': model}
+    w_locals.append(entry)
     del model
     gc.collect()
     message = f"Received a local model from {sender}"
