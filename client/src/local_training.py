@@ -20,6 +20,7 @@ if(train_on_gpu):
 device = torch.device(f"cuda:{device_id}" if device_id >= 0 else "cpu")
 
 
+
 class LocalTraining():
     def __init__(self):
         
@@ -35,32 +36,61 @@ class LocalTraining():
         self.current_epoch = 0
         self.current_iteration = 0
         self.best_valid_acc = 0
+        self.experiment = self.args["experiment"]
         self.epochs = self.args["local_ep"]
         self.lr = self.args["lr"]
 
-            
-        if int(self.subject) in self.args["dp_sgd_clients"]:
-            self.dpsgd_flag = True
-            self.secure_mode = self.args["secure_mode"]
-            self.delta = self.args['delta']
-            self.epsilon = self.args['epsilon']
-            self.max_per_sample_grad_norm = self.args['max_per_sample_grad_norm']
-            self.privacy_engine = PrivacyEngine(secure_mode=self.secure_mode)
-            self.epochs = self.args["local_ep_dpsgd"]
-            self.lr = self.args["lr_dpsgd"]
-        self.writer = SummaryWriter(log_dir="log_dir/experiment" + str(self.epochs) + "/", comment='moe_dte')
-        
-        # Loading of local training dataset and preparing data loader object for pytroch
-        
-        load_obj = LoadDatasets(
-            self.args['src'],
-            self.args['seq_length'],
-            self.subject,
-            self.args['overlap'],LoadStrategyA()
-        )
+        if self.experiment == "FashionMNIST":
+            self.writer = SummaryWriter(log_dir="log_dir/experiment" + str(self.epochs) + "/", comment='moe_dte')
+            if int(self.subject) in self.args["dp_sgd_clients"]:
+                self.dpsgd_flag = True
+                self.secure_mode = self.args["secure_mode"]
+                self.delta = self.args['delta']
+                self.epsilon = self.args['epsilon']
+                self.max_per_sample_grad_norm = self.args['max_per_sample_grad_norm']
+                self.privacy_engine = PrivacyEngine(secure_mode=self.secure_mode)
+                self.epochs = self.args["local_ep_dpsgd"]
+                self.lr = self.args["lr_dpsgd"]
+            train_load_path = "/data/"+str(self.subject)+"/train_data_ind.pth"
 
-        self.train_data_loader = load_obj.prepare_train_data_loader(self.args['batch_size'])
-        self.test_data_loader = load_obj.prepare_test_data_loader(self.args['batch_size'])
+            if not os.path.exists(train_load_path):
+                print(train_load_path, " not found")
+                exit()
+            else:
+                self.train_data_loader = torch.load(train_load_path)
+                print("Train Data shape",self.train_data_loader.dataset.dataset.data.shape)
+            
+            test_load_path = "/data/"+str(self.subject)+"/test_data_ind.pth"
+            if not os.path.exists(test_load_path):
+                print("Data not found")
+                exit()
+            else:
+                self.test_data_loader = torch.load(test_load_path)
+                print("Test Data shape",self.test_data_loader.dataset.data.shape)
+        else:
+            
+            if int(self.subject) in self.args["dp_sgd_clients"]:
+                self.dpsgd_flag = True
+                self.secure_mode = self.args["secure_mode"]
+                self.delta = self.args['delta']
+                self.epsilon = self.args['epsilon']
+                self.max_per_sample_grad_norm = self.args['max_per_sample_grad_norm']
+                self.privacy_engine = PrivacyEngine(secure_mode=self.secure_mode)
+                self.epochs = self.args["local_ep_dpsgd"]
+                self.lr = self.args["lr_dpsgd"]
+            self.writer = SummaryWriter(log_dir="log_dir/experiment" + str(self.epochs) + "/", comment='moe_dte')
+            
+            # Loading of local training dataset and preparing data loader object for pytroch
+            
+            load_obj = LoadDatasets(
+                self.args['src'],
+                self.args['seq_length'],
+                self.subject,
+                self.args['overlap'],LoadStrategyA()
+            )
+
+            self.train_data_loader = load_obj.prepare_train_data_loader(self.args['batch_size'])
+            self.test_data_loader = load_obj.prepare_test_data_loader(self.args['batch_size'])
         
     def set_device(self):
         device_id = get_device_id(torch.cuda.is_available())
@@ -83,12 +113,16 @@ class LocalTraining():
                                             target_epsilon=self.epsilon,
                                             epochs=self.epochs,
                                         )
-        
+       
         for epoch in range(self.current_epoch, self.epochs):
             self.current_epoch = epoch
-            self.train_one_epoch()
+            print("Validting on received global model",flush=True)
+            a, b =  self.validate_fmnist()
+            print("Accuracy of global model on validation set", a,flush=True)
+            print("Loss of global model on validation set", b,flush=True)
+            self.train_one_epoch_fmnist()
 
-            valid_acc, valid_loss =  self.validate()
+            valid_acc, valid_loss =  self.validate_fmnist()
             self.writer.add_scalar("validation_acc/epoch", valid_acc, self.current_epoch)
             is_best = valid_acc > self.best_valid_acc
             if is_best:
@@ -98,18 +132,56 @@ class LocalTraining():
                     drop_keys = ['lstm.l0.ih.weight', 'lstm.l0.ih.bias', 'lstm.l0.hh.weight', 'lstm.l0.hh.bias', 'lstm.l1.ih.weight', 'lstm.l1.ih.bias', 'lstm.l1.hh.weight', 'lstm.l1.hh.bias']
                     print("Module State Dict", self.model._module.state_dict().keys(),flush=True)
                     temp_state_dict = self.model._module.state_dict()
-                    for keys in drop_keys:
-                        item=temp_state_dict.pop(keys)
+                    # for keys in drop_keys:
+                    #     item=temp_state_dict.pop(keys)
                         # del self.model._module.state_dict()[keys]
                         # print("Popped",keys,flush=True)
                     # print("Module State Dict After", temp_state_dict.keys(),flush=True)
                     best_parameters = temp_state_dict#self.model._module.state_dict()
                 else:
                     best_parameters = self.model.state_dict()
+
                 
         self.writer.flush()
         self.writer.close()
         return best_parameters, valid_loss, self.best_valid_acc
+
+    def train_one_epoch_fmnist(self):
+        epoch_loss = AverageMeter()
+        epoch_acc = AverageMeter()
+        epoch_f1 = AverageMeter()
+        current_batch = 0
+        
+        for X,y in self.train_data_loader:
+            
+            X = X.to(self.device)
+            y = y.to(self.device)
+            pred = self.model(X)
+            cur_loss = self.loss(pred, y)
+            if np.isnan(float(cur_loss.item())):
+                raise ValueError('Loss is nan during training...')
+
+            self.optimizer.zero_grad()
+            cur_loss.backward()
+            self.optimizer.step()
+            
+            acc = calc_accuracy(pred.data,y.data)
+            f1_macro = f1_score(pred.data,y.data)
+            epoch_loss.update(cur_loss.item())
+            epoch_acc.update(acc,X.size(0))
+            epoch_f1.update(f1_macro,X.size(0))
+            self.current_iteration += 1
+            current_batch += 1
+        print("Total Elements",current_batch*32,flush=True)
+        printstr = (
+        f"\t Epoch {self.current_epoch}. Training Accuracy: {epoch_acc.avg:.6f} | Training Loss: {epoch_loss.avg:.6f}"
+        )
+        if self.dpsgd_flag:
+            self.epsilon = self.privacy_engine.get_epsilon(self.delta)
+            printstr += f" | (ε = {self.epsilon:.2f}, δ = {self.delta})"
+        print(printstr, flush=True)
+        self.writer.add_scalar("training_acc/epoch", epoch_acc.value, self.current_epoch)
+        self.writer.add_scalar("training_loss/epoch", epoch_loss.value, self.current_epoch)
 
     def train_one_epoch(self):
         epoch_loss = AverageMeter()
@@ -119,6 +191,7 @@ class LocalTraining():
 
         for (_, batch) in enumerate(self.train_data_loader):
             
+            print("Printing contents of train loader",batch,flush=True)
             X = batch['features']
             y = batch['labels']
 
@@ -140,7 +213,7 @@ class LocalTraining():
             self.current_iteration += 1
             current_batch += 1
         printstr = (
-        f"\t Epoch {self.current_epoch}. Accuracy: {epoch_acc.avg:.6f} | Loss: {epoch_loss.avg:.6f}"
+        f"\t Epoch {self.current_epoch}.  Training Accuracy: {epoch_acc.avg:.6f} | Training Loss: {epoch_loss.avg:.6f}"
         )
         if self.dpsgd_flag:
             self.epsilon = self.privacy_engine.get_epsilon(self.delta)
@@ -156,6 +229,21 @@ class LocalTraining():
         for (_, batch) in enumerate(self.test_data_loader):
             X = batch['features']
             y = batch['labels']
+            with torch.no_grad():
+                pred = self.model(X)
+            cur_loss = self.loss(pred, y)
+            acc = calc_accuracy(pred.data,y.data)
+            valid_loss_epoch.update(cur_loss.item())
+            valid_acc_epoch.update(acc,X.size(0))
+        return valid_acc_epoch.avg, valid_loss_epoch.avg
+
+    def validate_fmnist(self):
+        valid_loss_epoch = AverageMeter()
+        valid_acc_epoch = AverageMeter()
+        for X,y in self.test_data_loader:
+            
+            X = X.to(self.device)
+            y = y.to(self.device)
             with torch.no_grad():
                 pred = self.model(X)
             cur_loss = self.loss(pred, y)

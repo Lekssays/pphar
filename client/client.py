@@ -3,7 +3,7 @@ import asyncio
 from collections import OrderedDict
 from flask import Flask, request
 import opacus
-from src.SingleLSTM import SingleLSTMEncoder
+from src.SingleLSTM import SingleLSTMEncoder, FashionCNN
 from src.DPLSTM import DPLSTMEncoder
 from utils import *
 
@@ -42,17 +42,22 @@ def process_request(data):
     n_classes = get_config(key="n_classes")
     drop_prob = get_config(key="drop_prob")
     subject = os.getenv("PPHAR_SUBJECT_ID")
-    if int(subject) in get_config(key="dp_sgd_clients"):
-        global_model = DPLSTMEncoder(n_channels, n_hidden_layers, n_layers, n_classes, drop_prob)
-        for keys in w_global.keys():
-            if keys not in drop_keys:
-                global_model.state_dict()[keys] = w_global[keys]
-        # print("Input keys",global_model.state_dict().keys(),flush=True)
-        # print("Output keys",w_global.keys(),flush=True)
-    else:
-        global_model = SingleLSTMEncoder(n_channels, n_hidden_layers, n_layers, n_classes, drop_prob)
-        # print("Input keys",global_model.state_dict().keys(),flush=True)
+    experiment = get_config(key="experiment")
+    if experiment == "FashionMNIST":
+        global_model = FashionCNN()
         global_model.load_state_dict(w_global)
+    else:
+        if int(subject) in get_config(key="dp_sgd_clients"):
+            global_model = DPLSTMEncoder(n_channels, n_hidden_layers, n_layers, n_classes, drop_prob)
+            for keys in w_global.keys():
+                if keys not in drop_keys:
+                    global_model.state_dict()[keys] = w_global[keys]
+            # print("Input keys",global_model.state_dict().keys(),flush=True)
+            # print("Output keys",w_global.keys(),flush=True)
+        else:
+            global_model = SingleLSTMEncoder(n_channels, n_hidden_layers, n_layers, n_classes, drop_prob)
+            # print("Input keys",global_model.state_dict().keys(),flush=True)
+            global_model.load_state_dict(w_global)
         
     message = "Training with the new global model"
     print(message)

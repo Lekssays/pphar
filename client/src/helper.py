@@ -50,4 +50,4 @@ def get_device_id(cuda_is_available):
     available_mem_on_gpu = stats[gpu_index, 1]
     device_id = gpu_index if available_mem_on_gpu > 2000 else -1
     logger.log(f"Automatically selected device id {device_id} (>= 0 for GPU, -1 for CPU)")
-    return device_id
+    return 0#device_id

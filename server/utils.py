@@ -11,7 +11,7 @@ from collections import OrderedDict
 from datetime import datetime
 
 from multiprocessing import Process
-from src.SingleLSTM import SingleLSTMEncoder
+from src.SingleLSTM import SingleLSTMEncoder, FashionCNN
 from helper import get_device_id
 
 device_id = -1
@@ -34,7 +34,7 @@ def initiliaze_global_model():
     n_layers = get_config(key="n_layers")
     n_classes = get_config(key="n_classes")
     drop_prob = get_config(key="drop_prob")
-    global_model = SingleLSTMEncoder(n_channels, n_hidden_layers, n_layers, n_classes, drop_prob)
+    global_model = FashionCNN()#SingleLSTMEncoder(n_channels, n_hidden_layers, n_layers, n_classes, drop_prob)
     global_model.to(device)
     global_model.train()
     return global_model.state_dict()
