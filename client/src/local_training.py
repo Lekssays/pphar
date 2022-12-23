@@ -43,7 +43,15 @@ class LocalTraining():
             self.dpsgd_flag = True
             self.secure_mode = self.args["secure_mode"]
             self.delta = self.args['delta']
-            self.epsilon = self.args['epsilon']
+            if self.args["mixed_budgets"]:
+                if int(self.subject) in [1]:
+                    self.epsilon = 0.1
+                elif int(self.subject) in [5]:
+                    self.epsilon = 0.1
+                elif int(self.subject) in [7]:
+                    self.epsilon = 0.1
+            else:
+                self.epsilon = self.args['epsilon']
             self.max_per_sample_grad_norm = self.args['max_per_sample_grad_norm']
             self.privacy_engine = PrivacyEngine(secure_mode=self.secure_mode)
             self.epochs = self.args["local_ep_dpsgd"]

@@ -5,6 +5,7 @@
 import copy
 import torch
 import json
+import gc
 
 import numpy as np
 from torch import nn
@@ -46,45 +47,31 @@ def compute_cosine_sim(w_locals):
 
 
 def FedAvg(w_locals):
-    to_be_removed = []
-
-    for i, w in enumerate(w_locals):
-        if get_subject_id(name=w['sender']) in get_config(key="he_clients"):
-            to_be_removed.append(i)
-    
-    for i in to_be_removed:
-        w_locals.pop(i)
-
-    to_be_removed.clear()
-
     cs_mat, indexes = compute_cosine_sim(w_locals)
     cs_avg = np.mean(cs_mat, axis=1)
-
-
-    for w in w_locals:
-        print(w['sender'])
-
 
     print("cs_mat", cs_mat, flush=True)
     print("cs_avg", cs_avg, flush=True)
     threshold = np.mean(cs_avg)
     for i in range(0, len(cs_avg)):
         if cs_avg[i] < threshold:
-            to_be_removed.append(i)
+            w_locals[i] = 0
 
-    print("to_be_removed", to_be_removed, flush=True)
+    final_w_locals = []
     print("len(w_locals)", len(w_locals), flush=True)
-    if len(to_be_removed) < len(cs_avg):
-        for i in to_be_removed:
-            if i < len(w_locals):
-                w_locals.pop(i)
+    for i in range(0, len(w_locals)):
+        if w_locals[i] != 0: 
+            final_w_locals.append(w_locals[i]['model'])
+    print("len(final_w_locals)", len(final_w_locals), flush=True)
 
-    print("len(w_locals)", len(w_locals), flush=True)
-    w_avg = copy.deepcopy(w_locals[0]['model'])
+    del w_locals
+    gc.collect()
+
+    w_avg = copy.deepcopy(final_w_locals[0])
     for k in w_avg.keys():
-        for i in range(1, len(w_locals)):
+        for i in range(1, len(final_w_locals)):
             w_avg[k] = w_avg[k].detach().cpu()
-            w_locals[i]['model'][k] = w_locals[i]['model'][k].detach().cpu()
-            w_avg[k] += w_locals[i]['model'][k]
-        w_avg[k] = torch.div(w_avg[k], len(w_locals))
+            final_w_locals[i][k] = final_w_locals[i][k].detach().cpu()
+            w_avg[k] += final_w_locals[i][k]
+        w_avg[k] = torch.div(w_avg[k], len(final_w_locals))
     return w_avg
