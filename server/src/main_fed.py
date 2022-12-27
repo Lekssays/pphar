@@ -30,9 +30,7 @@ def compute_cosine_sim(w_locals):
     cs_mat = np.zeros((len(w_locals), len(w_locals)), dtype=float) * 1e-6
 
     weights = []
-    indexes = np.zeros(len(w_locals), dtype=int)
     for i, w in enumerate(w_locals):
-        indexes[i] = get_subject_id(name=w['sender'])
         weights.append(w['model']['fc.weight'])
 
     for i, w1 in enumerate(weights):
@@ -43,11 +41,11 @@ def compute_cosine_sim(w_locals):
             w2 = w2.cpu()
             cs_mat[i][j] = (w1 * w2).sum() / (norm(w1) * norm(w2))
 
-    return cs_mat, indexes
+    return cs_mat
 
 
 def FedAvg(w_locals):
-    cs_mat, indexes = compute_cosine_sim(w_locals)
+    cs_mat = compute_cosine_sim(w_locals)
     cs_avg = np.mean(cs_mat, axis=1)
 
     print("cs_mat", cs_mat, flush=True)
