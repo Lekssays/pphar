@@ -31,7 +31,7 @@ def compute_cosine_sim(w_locals):
 
     weights = []
     for i, w in enumerate(w_locals):
-        weights.append(w['model']['fc.weight'])
+        weights.append(w['fc3.weight'])#['model']
 
     for i, w1 in enumerate(weights):
         for j, w2 in enumerate(weights):
@@ -59,7 +59,7 @@ def FedAvg(w_locals):
     print("len(w_locals)", len(w_locals), flush=True)
     for i in range(0, len(w_locals)):
         if w_locals[i] != 0: 
-            final_w_locals.append(w_locals[i]['model'])
+            final_w_locals.append(w_locals[i])#['model']
     print("len(final_w_locals)", len(final_w_locals), flush=True)
 
     del w_locals
