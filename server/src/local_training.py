@@ -14,11 +14,14 @@ from src.losses import *
 from src.SingleLSTM import * 
 
 
-train_on_gpu = torch.cuda.is_available()
-if(train_on_gpu):
-    device_id = get_device_id(torch.cuda.is_available())
-device = torch.device(f"cuda:{device_id}" if device_id >= 0 else "cpu")
+# train_on_gpu = torch.cuda.is_available()
+# if(train_on_gpu):
+#     device_id = get_device_id(torch.cuda.is_available())
+# device = torch.device(f"cuda:{device_id}" if device_id >= 0 else "cpu")
 
+device_id = -1
+device_id = get_device_id(torch.cuda.is_available())
+device = torch.device(f"cuda:{device_id}" if device_id >= 0 else "cpu")
 
 
 class LocalTraining():

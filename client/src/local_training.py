@@ -7,29 +7,30 @@ import numpy as np
 from torch.utils.tensorboard import SummaryWriter
 import warnings
 warnings.filterwarnings("ignore", category=UserWarning)
-from src.helper import get_device_id
+# from src.helper import get_device_id
 from src.metrics import f1_score, AverageMeter, calc_accuracy,f1_score
 from src.dataset import *
 from src.losses import *
 from src.SingleLSTM import * 
 from opacus import PrivacyEngine
 
-train_on_gpu = torch.cuda.is_available()
-if(train_on_gpu):
-    device_id = get_device_id(torch.cuda.is_available())
-device = torch.device(f"cuda:{device_id}" if device_id >= 0 else "cpu")
+# train_on_gpu = torch.cuda.is_available()
+# if(train_on_gpu):
+#     device_id = get_device_id(torch.cuda.is_available())
+# device = torch.device(f"cuda:{device_id}" if device_id >= 0 else "cpu")
 
 
 
 class LocalTraining():
-    def __init__(self):
+    def __init__(self,device):
         
         
         # Passed on most configuration variables for local training through args
         self.args = self.get_args()
         self.loss = CrossEntropyLoss2d()
         self.subject = os.getenv("PPHAR_SUBJECT_ID")
-        self.set_device()
+        # self.set_device()
+        self.device = device
 
         self.dpsgd_flag = False
         
@@ -92,9 +93,9 @@ class LocalTraining():
             self.train_data_loader = load_obj.prepare_train_data_loader(self.args['batch_size'])
             self.test_data_loader = load_obj.prepare_test_data_loader(self.args['batch_size'])
         
-    def set_device(self):
-        device_id = get_device_id(torch.cuda.is_available())
-        self.device = torch.device(f"cuda:{device_id}" if device_id >= 0 else "cpu")
+    # def set_device(self):
+    #     device_id = get_device_id(torch.cuda.is_available())
+    #     self.device = torch.device(f"cuda:{device_id}" if device_id >= 0 else "cpu")
         
 
     def train(self, model):
@@ -144,6 +145,7 @@ class LocalTraining():
                 
         self.writer.flush()
         self.writer.close()
+        self.model = self.model.to("cpu")
         return best_parameters, valid_loss, self.best_valid_acc
 
     def train_one_epoch_fmnist(self):
