@@ -15,3 +15,10 @@ server/config.json
 *.zip
 *.csv
 *.txt
+client/keys/s_context
+.gitignore
+client/keys/s_relin_key
+client/keys/s_secret_key
+client/keys/s_public_key
+client/keys/s_rotate_key
+server/rounds.json
