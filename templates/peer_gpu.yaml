@@ -15,8 +15,11 @@
     # NOTE: CHANGE TO YOUR SERVER: server1.pphar.io:5000 if running in one machine
     - PPHAR_SERVER_HOST=server1.pphar.io
     - PPHAR_SERVER_PORT=5000
+    - PPHAR_TEE_HOST=tee.pphar.io
+    - PPHAR_TEE_PORT=5555
     # NOTE: CHANGE TO YOUR LOG SERVER: ws://172.17.0.1:7777 if running in one machine
     - PPHAR_LOG_SERVER_ENDPOINT=ws://172.17.0.1:7777
+    - PPHAR_TEE_ENDPOINT=http://tee.pphar.io:5555
     command: /bin/bash /entry/hello.sh
     working_dir: /client
     ports:

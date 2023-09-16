@@ -66,71 +66,42 @@ def from_bytes(content: bytes) -> torch.Tensor:
     return loaded_content
 
 
-def send_message(address: str, port: int, data: bytes, init: bool, encrypted: bool, resumed: bool):
-    global rounds
-    if resumed:
-        rounds = load_rounds()
-    if init and rounds == 0:
-        url = "http://" + address + ":" + str(port) + "/init"
+def send_message(address: str, port: int, model: OrderedDict, HE=None):
+    if bool(get_config(key="encrypted")):
+        url = "http://" + address + ":" + str(port) + "/enc_models"
+        payload = {
+            'context': HE.to_bytes_context().decode('cp437'),
+            'pk': HE.to_bytes_public_key().decode('cp437'),
+            'rlk': HE.to_bytes_relin_key().decode('cp437'),
+            'rtk': HE.to_bytes_rotate_key().decode('cp437'),
+            'data': to_bytes(content=model).decode('cp437'),
+            'sender': os.getenv("PPHAR_CORE_ID"),
+        }
     else:
-        if encrypted:
-            url = "http://" + address + ":" + str(port) + "/enc_models"
-        else:
-            url = "http://" + address + ":" + str(port) + "/models"
-    payload = {
-        "data": data.decode("cp437"),
-        "rounds": rounds,
-    }
-    print(f"Model sent to {url}")
-    return requests.post(url=url, data=json.dumps(payload), timeout=None)
-
+        url = "http://" + address + ":" + str(port) + "/models"
+        payload = {
+            'sender': os.getenv("PPHAR_CORE_ID"),
+            'data': to_bytes(content=model).decode('cp437'),
+        }
+    res = requests.post(url, data=json.dumps(payload), timeout=None)
+    del payload
+    gc.collect()
+    return res
 
 def send_global_model(model, init=False, encrypted=False, failed=False, subjects=[], resumed=False):
+    #Change this send global model function to send to the TEE server
+    
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    
-    global rounds
-    if resumed:
-        rounds = load_rounds()
-
-    if not failed:
-        subjects = get_config(key="subjects")
-    else:
-        rounds -= 1
-    
-
-    data = to_bytes(content=model)
-    #Here we have to send a copy of the model the TEE server
-    for s in subjects:
-        if get_config("local"):
-            address = "subject" + str(s) + ".pphar.io"
-            port = 5000
-            tee_address = "tee.pphar.io"
-            tee_port = 5555
-        else:
-            address = os.getenv("PPHAR_REMOTE_TRAINING_SERVER")
-            port = int("444" + str(s))
-        if encrypted:
-            message = "Sending the encrypted global model to " + address + ":" + str(port) +" / " + str(rounds)
-            message_tee = "Sending the encrypted global model to " + tee_address + ":" + str(tee_port) +" / " + str(rounds)
-        else:   
-            if init and rounds == 0:
-                message = "Sending the initial global model to " + address + ":" + str(port) +" / " + str(rounds)
-                message_tee = "Sending the initial global model to" + tee_address + ":" + str(tee_port) +" / " + str(rounds)
-                print(message_tee, flush=True)
-                loop.run_until_complete(send_log(message_tee))
-                tee_process = Process(target=send_message, args=(tee_address, tee_port, data, init, encrypted, resumed, ))
-                tee_process.start()
-            else:
-                message = "Sending the global model to " + address + ":" + str(port) +" / " + str(rounds)
-                # message_tee = "Sending the global model to" + tee_address + ":" + str(tee_port) +" / " + str(rounds)
-
-        print(message, flush=True)
-        loop.run_until_complete(send_log(message))
-        p = Process(target=send_message, args=(address, port, data, init, encrypted, resumed, ))
-        p.start()
-        time.sleep(random.randint(0, 5))
-    rounds += 1
+    address = os.getenv("PPHAR_SERVER_HOST")
+    port = int(os.getenv("PPHAR_SERVER_PORT"))
+    send_message(address=address, port=port,model=model)
+    del model
+    gc.collect()
+    message = "Sending the aggregated local TEE model to " + address
+    print(message, flush=True)
+    loop.run_until_complete(send_log(message))
+    return "Sent the aggregated local TEE model"
 
 
 async def send_log(message: str):
@@ -196,12 +167,12 @@ def process_request(request):
     model = from_bytes(content=request['data'].encode('cp437'))
     sender = request['sender']
     
-    rounds = get_rounds()
-    if rounds > get_config(key="epochs")  - 1:
-        message = "Training finished :)"
-        print(message, flush=True)
-        loop.run_until_complete(send_log(message))
-        return "Training finished."
+    # rounds = get_rounds()
+    # if rounds > get_config(key="epochs")  - 1:
+    #     message = "Training finished :)"
+    #     print(message, flush=True)
+    #     loop.run_until_complete(send_log(message))
+    #     return "Training finished."
 
     # add_subject(sender)
     w_locals.append(model)
@@ -211,18 +182,18 @@ def process_request(request):
     print(message, flush=True)
     loop.run_until_complete(send_log(message))
 
-    #Aggregation logic will change as number of clients will reduce.
-    if len(w_locals) == (len(get_config(key="subjects"))-get_config(key="n_tee_clients")+1): #glob.glob('./subjects/*.sbj'))
-        message = "Aggregating local models."
+    # if length equal to number of tee_subjects: Change accordingly TEE
+    if len(w_locals) == len(get_config(key="n_tee_clients")): #glob.glob('./subjects/*.sbj'))
+        message = "Aggregating local tee models."
         print(message, flush=True)
         loop.run_until_complete(send_log(message))
         w_global = FedAvg(w_locals)
         w_locals.clear()
 
-        message = "Saving the aggregated global model locally."
-        print(message, flush=True)
-        loop.run_until_complete(send_log(message))
-        torch.save(w_global, "w_global.pt")
+        # message = "Saving the aggregated global model locally."
+        # print(message, flush=True)
+        # loop.run_until_complete(send_log(message))
+        # torch.save(w_global, "w_global.pt")
         
 
         send_global_model(model=w_global, init=False, encrypted=False)
@@ -232,7 +203,7 @@ def process_request(request):
 
         # clear_subjects_directory()
 
-        message = f"Sent aggregated global model to all clients."
+        message = f"Sent aggregated TEE model to the server"
         print(message, flush=True)
         loop.run_until_complete(send_log(message))
     
@@ -289,7 +260,6 @@ def process_encrypted_request(request):
     message = f"Received an encrypted local model from {sender}"
     print(message, flush=True)
     loop.run_until_complete(send_log(message))
-
     if len(glob.glob('./subjects/*.sbj')) == len(get_config(key="subjects")):
         message = f"Aggregating encrypted local models from {sender}"
         print(message, flush=True)

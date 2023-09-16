@@ -75,9 +75,18 @@ def generate_docker_compose(configs: list):
     base = base_file.read()
     base_file.close()
     main_config = base + "\n"
+
     for config in configs:
-        main_config += config + "\n"     
+        main_config += config + "\n"
+    
+    main_config += load_tee_config() + "\n"
+           
     write(filename="docker-compose.yaml", content=main_config)
+
+def load_tee_config():
+    with open("./templates/server_tee.yaml", "r") as f:
+        tee_config = f.read()
+    return tee_config
 
 
 def main():

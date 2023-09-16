@@ -1,18 +1,14 @@
-  core_id:
-    container_name: core_id
-    image: lekssays/pphar-client:gpu
+  tee.pphar.io:
+    container_name: tee.pphar.io
+    image: occlum/occlum:latest-ubuntu20.04
     privileged: true
-    deploy:
-      resources:
-        reservations:
-          devices:
-          - driver: nvidia
-            capabilities: [gpu]
+    devices:
+    - /dev/sgx:/dev/sgx
     environment:
-    - PPHAR_CORE_ID=core_id
-    - PPHAR_SERVER_PORT=5000
+    - PPHAR_CORE_ID=tee.pphar.io
+    - PPHAR_SERVER_PORT=5555
     # NOTE: CHANGE TO YOUR REMOTE TRAINING SERVER: 0.0.0.0 if running in one machine
-    - PPHAR_REMOTE_TRAINING_SERVER=0.0.0.0
+    - PPHAR_REMOTE_TRAINING_SERVER=server.pphar.io
     # NOTE: CHANGE TO YOUR LOG SERVER: ws://172.17.0.1:7777 if running in one machine
     - PPHAR_LOG_SERVER_ENDPOINT=ws://172.17.0.1:7777
     command: /bin/bash /entry/hello.sh
@@ -22,6 +18,6 @@
     - ./server/:/server
     - ./config.json:/server/config.json
     ports:
-    - 5000:5000
+    - 5555:5555
     networks:
     - pphar

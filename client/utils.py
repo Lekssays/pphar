@@ -75,10 +75,17 @@ def send_message(address: str, port: int, model: OrderedDict, HE=None):
 
 
 def send_model(model: OrderedDict):
+    #Here we must add support to send models to TEE as well
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    address = os.getenv("PPHAR_SERVER_HOST")
-    port = int(os.getenv("PPHAR_SERVER_PORT"))
+    if int(os.getenv("PPHAR_SUBJECT_ID")) in get_config(key="tee_clients"):
+        address = os.getenv("PPHAR_TEE_HOST")
+        port = os.getenv("PPHAR_TEE_PORT")
+    else:
+        address = os.getenv("PPHAR_SERVER_HOST")
+        port = int(os.getenv("PPHAR_SERVER_PORT"))
+
+    
     send_message(address=address, port=port,model=model)
     del model
     gc.collect()
