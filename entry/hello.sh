@@ -21,6 +21,9 @@ fi
 if [[ "$PPHAR_CORE_ID" == *"server"* ]]; then
   python3 /server/server.py 
   tail -f /dev/null
+elif [[ "$PPHAR_CORE_ID" == *"tee"* ]]; then
+  python3 /tee/tee.py 
+  tail -f /dev/null
 else
   python3 /client/client.py 
   tail -f /dev/null

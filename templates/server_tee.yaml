@@ -15,7 +15,7 @@
     working_dir: /server
     volumes:
     - ./entry:/entry
-    - ./server/:/server
+    - ./tee/:/tee
     - ./config.json:/server/config.json
     ports:
     - 5555:5555

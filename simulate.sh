@@ -22,8 +22,13 @@ sleep 5
 echo "Starting subjects..."
 docker-compose up -d $(<peers.txt)
 
+sleep 5
+
+echo "Starting subjects..."
+docker-compose up -d $(<tee.txt)
+
 echo "Sleeping a little bit zzz..."
 sleep 5
 
 echo "Initialize the model"
-curl http://0.0.0.0:8585/init
+curl http://0.0.0.0:5000/init
