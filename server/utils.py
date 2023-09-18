@@ -105,22 +105,15 @@ def send_global_model(model, init=False, encrypted=False, failed=False, subjects
         if get_config("local"):
             address = "subject" + str(s) + ".pphar.io"
             port = 5000
-            tee_address = "tee.pphar.io"
-            tee_port = 5555
         else:
             address = os.getenv("PPHAR_REMOTE_TRAINING_SERVER")
             port = int("444" + str(s))
         if encrypted:
             message = "Sending the encrypted global model to " + address + ":" + str(port) +" / " + str(rounds)
-            message_tee = "Sending the encrypted global model to " + tee_address + ":" + str(tee_port) +" / " + str(rounds)
+            # message_tee = "Sending the encrypted global model to " + tee_address + ":" + str(tee_port) +" / " + str(rounds)
         else:   
             if init and rounds == 0:
                 message = "Sending the initial global model to " + address + ":" + str(port) +" / " + str(rounds)
-                message_tee = "Sending the initial global model to" + tee_address + ":" + str(tee_port) +" / " + str(rounds)
-                print(message_tee, flush=True)
-                loop.run_until_complete(send_log(message_tee))
-                tee_process = Process(target=send_message, args=(tee_address, tee_port, data, init, encrypted, resumed, ))
-                tee_process.start()
             else:
                 message = "Sending the global model to " + address + ":" + str(port) +" / " + str(rounds)
                 # message_tee = "Sending the global model to" + tee_address + ":" + str(tee_port) +" / " + str(rounds)
@@ -130,6 +123,14 @@ def send_global_model(model, init=False, encrypted=False, failed=False, subjects
         p = Process(target=send_message, args=(address, port, data, init, encrypted, resumed, ))
         p.start()
         time.sleep(random.randint(0, 5))
+    if init and rounds == 0:
+        tee_address = "tee.pphar.io"
+        tee_port = 5555
+        message_tee = "Sending the initial global model to " + tee_address + ":" + str(tee_port) +" / " + str(rounds)
+        print(message_tee, flush=True)
+        loop.run_until_complete(send_log(message_tee))
+        tee_process = Process(target=send_message, args=(tee_address, tee_port, data, init, encrypted, resumed, ))
+        tee_process.start()
     rounds += 1
 
 

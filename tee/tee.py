@@ -1,5 +1,5 @@
 from flask import Flask, request
-from tee.tee_utils import *
+from tee_utils import *
 
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 2048 * 1024 * 1024

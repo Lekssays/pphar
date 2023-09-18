@@ -12,3 +12,4 @@ asyncio
 websockets
 cmake
 Pyfhel
+waitress

@@ -1,22 +1,23 @@
   tee.pphar.io:
     container_name: tee.pphar.io
-    image: occlum/occlum:latest-ubuntu20.04
+    image: occlum_local:pphar
     privileged: true
     devices:
     - /dev/sgx:/dev/sgx
     environment:
     - PPHAR_CORE_ID=tee.pphar.io
-    - PPHAR_SERVER_PORT=5555
+    - PPHAR_SERVER_HOST=server1.pphar.io
+    - PPHAR_SERVER_PORT=5000
     # NOTE: CHANGE TO YOUR REMOTE TRAINING SERVER: 0.0.0.0 if running in one machine
     - PPHAR_REMOTE_TRAINING_SERVER=server.pphar.io
     # NOTE: CHANGE TO YOUR LOG SERVER: ws://172.17.0.1:7777 if running in one machine
     - PPHAR_LOG_SERVER_ENDPOINT=ws://172.17.0.1:7777
     command: /bin/bash /entry/hello.sh
-    working_dir: /server
+    working_dir: /tee
     volumes:
     - ./entry:/entry
     - ./tee/:/tee
-    - ./config.json:/server/config.json
+    - ./config.json:/tee/config.json
     ports:
     - 5555:5555
     networks:

@@ -67,10 +67,10 @@ if __name__ == "__main__":
     #These are clients sending to the TEE server
     client_number = int(os.environ["PPHAR_SUBJECT_ID"])
     print("Client Number",client_number,flush=True)
-    if client_number in get_config("tee_clients"):
-        print("Serve to the TEE server",flush=True)
-        serve(app, host="0.0.0.0", port=5555, threads=10)
-    else:
-    #These are clients sending to the server
-        print("Serve to the federated server",flush=True)
-        serve(app, host="0.0.0.0", port=5000, threads=10)
+    # if client_number in get_config("tee_clients"):
+    #     print("Serve to the TEE server",flush=True)
+    #     serve(app, host="0.0.0.0", port=5555, threads=10)
+    # else:
+    # #These are clients sending to the server
+    print("Serve to the federated server",flush=True)
+    serve(app, host="0.0.0.0", port=5000, threads=10)

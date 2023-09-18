@@ -6,7 +6,7 @@ import torch
 import requests
 import os
 import websockets
-import psutil
+# import psutil
 import time
 import random
 import gc
@@ -89,12 +89,12 @@ def send_message(address: str, port: int, model: OrderedDict, HE=None):
     return res
 
 def send_global_model(model, init=False, encrypted=False, failed=False, subjects=[], resumed=False):
-    #Change this send global model function to send to the TEE server
     
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     address = os.getenv("PPHAR_SERVER_HOST")
     port = int(os.getenv("PPHAR_SERVER_PORT"))
+    print("Address and Port",address,port,flush=True)
     send_message(address=address, port=port,model=model)
     del model
     gc.collect()
@@ -176,14 +176,16 @@ def process_request(request):
 
     # add_subject(sender)
     w_locals.append(model)
+
     del model
     gc.collect()
     message = f"Received a local model from {sender}"
     print(message, flush=True)
     loop.run_until_complete(send_log(message))
 
+
     # if length equal to number of tee_subjects: Change accordingly TEE
-    if len(w_locals) == len(get_config(key="n_tee_clients")): #glob.glob('./subjects/*.sbj'))
+    if len(w_locals) == get_config(key="n_tee_clients"): #glob.glob('./subjects/*.sbj'))
         message = "Aggregating local tee models."
         print(message, flush=True)
         loop.run_until_complete(send_log(message))
