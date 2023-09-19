@@ -1,6 +1,6 @@
   tee.pphar.io:
     container_name: tee.pphar.io
-    image: occlum_local:pphar
+    image: tee_occlum:pphar
     privileged: true
     devices:
     - /dev/sgx:/dev/sgx
@@ -12,11 +12,18 @@
     - PPHAR_REMOTE_TRAINING_SERVER=server.pphar.io
     # NOTE: CHANGE TO YOUR LOG SERVER: ws://172.17.0.1:7777 if running in one machine
     - PPHAR_LOG_SERVER_ENDPOINT=ws://172.17.0.1:7777
-    command: /bin/bash /entry/hello.sh
-    working_dir: /tee
+    command: /bin/bash /demos/pytorch/standalone/run.sh
+    working_dir: /demos/pytorch/standalone
     volumes:
     - ./entry:/entry
-    - ./tee/:/tee
+    - ./tee/config.json:/demos/pytorch/standalone/config.json
+    - ./tee/helper.py:/demos/pytorch/standalone/helper.py
+    - ./tee/rounds.json:/demos/pytorch/standalone/rounds.json
+    - ./tee/tee_utils.py:/demos/pytorch/standalone/tee_utils.py
+    - ./tee/tee.py:/demos/pytorch/standalone/tee.py
+    - ./tee/pytorch.yaml:/demos/pytorch/standalone/pytorch.yaml
+    - ./tee/run.sh:/demos/pytorch/standalone/run.sh
+    - ./tee/src:/demos/pytorch/standalone/src
     - ./config.json:/tee/config.json
     ports:
     - 5555:5555
